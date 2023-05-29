@@ -95,53 +95,43 @@ template<class Head, class... Tail> void FLASH(const Head  &head, const Tail &..
 
 namespace kyo {
 
-long long bisect(long long ok, long long ng, function<bool(long long)> check) {
+long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) {
     while (abs(ok - ng) > 1) {
-        long long mid = ok + (ng - ok) / 2;
-        if (check(mid)) ok = mid;
-        else ng = mid;
+        long long mid = (ok + ng) / 2;
+        if (is_ok(mid))
+            ok = mid;
+        else
+            ng = mid;
     }
     return ok;
 }
 
 }
 
-vll anss;
-
-ll solve(ll N) {
-
-    if (anss[0] > N) return -1;
-    auto check = [&](ll x) -> bool {
-        return anss[x] <= N;
-    };
-
-    return anss[kyo::bisect(0, anss.size(), check)];
-}
 
 int main() {
-    ll add = 1;
-    vll base;
-    while (add <= 1000000000000000000) {
-        base.pb(add);
-        add *= 2;
+
+
+    LL(N);
+
+    ll M = 2 * N;
+    string ans;
+    ll m = N;
+    if (m % 4 != 0) {
+        ans.pb('0' + m % 4);
+        m -= m % 4;
     }
-    reverse(all(base));
-
-
-    for (int i = 0; i < base.size(); i++) {
-        for (int j = i + 1; j < base.size(); j++) {
-            for (int k = j + 1; k < base.size(); k++) {
-                anss.pb(base[i] + base[j] + base[k]);
-            }
-        }
+    while (m > 0) {
+        ans.pb('4');
+        m -= 4;
     }
-    sort(all(anss));
+
+    OUT(M);
+    OUT(ans);
 
 
-    LL(T);
-    rep(i, T) {
-        LL(N);
-        OUT(solve(N));
-    }
+
+
+
 
 }

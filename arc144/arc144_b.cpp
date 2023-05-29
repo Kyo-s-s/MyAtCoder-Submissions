@@ -94,54 +94,42 @@ void FLASH(){ cout << endl; }
 template<class Head, class... Tail> void FLASH(const Head  &head, const Tail &...tail) { output(head); if(sizeof...(tail)) cout << " "; FLASH(tail...); }
 
 namespace kyo {
-
-long long bisect(long long ok, long long ng, function<bool(long long)> check) {
+long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) {
     while (abs(ok - ng) > 1) {
-        long long mid = ok + (ng - ok) / 2;
-        if (check(mid)) ok = mid;
-        else ng = mid;
+        long long mid = (ok + ng) / 2;
+        if (is_ok(mid))
+            ok = mid;
+        else
+            ng = mid;
     }
     return ok;
 }
-
 }
 
-vll anss;
-
-ll solve(ll N) {
-
-    if (anss[0] > N) return -1;
-    auto check = [&](ll x) -> bool {
-        return anss[x] <= N;
-    };
-
-    return anss[kyo::bisect(0, anss.size(), check)];
-}
 
 int main() {
-    ll add = 1;
-    vll base;
-    while (add <= 1000000000000000000) {
-        base.pb(add);
-        add *= 2;
-    }
-    reverse(all(base));
+
+    LL(N, a, b);
+    VEC(ll, A, N);
 
 
-    for (int i = 0; i < base.size(); i++) {
-        for (int j = i + 1; j < base.size(); j++) {
-            for (int k = j + 1; k < base.size(); k++) {
-                anss.pb(base[i] + base[j] + base[k]);
+    auto check = [&](ll x) -> bool {
+        ll add = 0, del = 0;
+        for (auto v : A) {
+            if (v > x) {
+                del += (v - x) / b;
+            } else {
+                add += (x - v + a - 1) / a;
             }
         }
-    }
-    sort(all(anss));
+        return add <= del;
+    };
 
+    ll ok = 0, ng = vmax(A) * 5;
+    ll ans = kyo::bisect(ok, ng, check);
+    OUT(ans);
 
-    LL(T);
-    rep(i, T) {
-        LL(N);
-        OUT(solve(N));
-    }
+    
+
 
 }
