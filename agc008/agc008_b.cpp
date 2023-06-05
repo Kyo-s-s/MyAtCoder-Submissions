@@ -100,153 +100,68 @@ long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { 
 
 }
 
-template<int m> struct StaticModint{
-    using mint = StaticModint;
-  public:
-    static constexpr int mod() { return m; }
-    static mint raw(int v) {
-        mint x;
-        x._v = v;
-        return x;
-    }
-
-    StaticModint() : _v(0) {}
-    template <class T>
-    StaticModint(T v) {
-        long long x = (long long)(v % (long long)(umod()));
-        if (x < 0) x += umod();
-        _v = (unsigned int)(x);
-    }
-
-    unsigned int val() const { return _v; }
-
-    mint& operator++() {
-        _v++;
-        if (_v == umod()) _v = 0;
-        return *this;
-    }
-    mint& operator--() {
-        if (_v == 0) _v = umod();
-        _v--;
-        return *this;
-    }
-    mint operator++(int) {
-        mint result = *this;
-        ++*this;
-        return result;
-    }
-    mint operator--(int) {
-        mint result = *this;
-        --*this;
-        return result;
-    }
-
-    mint& operator+=(const mint& rhs) {
-        _v += rhs._v;
-        if (_v >= umod()) _v -= umod();
-        return *this;
-    }
-    mint& operator-=(const mint& rhs) {
-        _v -= rhs._v;
-        if (_v >= umod()) _v += umod();
-        return *this;
-    }
-    mint& operator*=(const mint& rhs) {
-        unsigned long long z = _v;
-        z *= rhs._v;
-        _v = (unsigned int)(z % umod());
-        return *this;
-    }
-    mint& operator/=(const mint& rhs) { return *this = *this * rhs.inv(); }
-
-    mint operator+() const { return *this; }
-    mint operator-() const { return mint() - *this; }
-
-    mint pow(long long n) const {
-        assert(0 <= n);
-        mint x = *this, r = 1;
-        while (n) {
-            if (n & 1) r *= x;
-            x *= x;
-            n >>= 1;
+template<class T> struct CumulativeSum {
+    int n;
+    vector<T> data; 
+    bool builded = false;
+    CumulativeSum(int n) : n(n), data(n + 1) {}
+    CumulativeSum(const vector<T> &v) : n(v.size()), data(n + 1) {
+        for (int i = 0; i < n; i++) {
+            data[i + 1] = v[i];
         }
-        return r;
-    }
-    mint inv() const {
-        assert(_v);
-        return pow(umod() - 2);
     }
 
-    friend mint operator+(const mint& lhs, const mint& rhs) { return mint(lhs) += rhs;}
-    friend mint operator-(const mint& lhs, const mint& rhs) { return mint(lhs) -= rhs; }
-    friend mint operator*(const mint& lhs, const mint& rhs) { return mint(lhs) *= rhs; }
-    friend mint operator/(const mint& lhs, const mint& rhs) { return mint(lhs) /= rhs; }
-    friend bool operator==(const mint& lhs, const mint& rhs) { return lhs._v == rhs._v; }
-    friend bool operator!=(const mint& lhs, const mint& rhs) { return lhs._v != rhs._v; }
-
-    friend ostream &operator<<(ostream &os, mint x) {
-        os << x.val();
-        return (os);
+    void build() {
+        for (int i = 0; i < n; i++) {
+            data[i + 1] += data[i];
+        }
+        builded = true;
     }
 
-  private:
-    unsigned int _v;
-    static constexpr unsigned int umod() { return m; }
+    T sum(int r) {
+        if (!builded) build();
+        assert(0 <= r && r <= n);
+        return data[r];
+    }
+
+    T sum(int l, int r) {
+        assert(0 <= l && l <= r && r <= n);
+        return sum(r) - sum(l);
+    }
 
 };
 
-using Modint998244353 = StaticModint<998244353>;
-using Modint1000000007 = StaticModint<1000000007>;
-
-using Mint = Modint998244353;
-
-vll divisor(ll n) {
-    vll res;
-    for (ll i = 1; i * i <= n; i++) {
-        if (n % i == 0) {
-            res.pb(i);
-            if (i != n / i) res.pb(n / i);
-        }
-    }
-    sort(all(res));
-    return res;
-}
-
 int main() {
-    
-    LL(N);
-    STR(S);
 
-    // A[x] : 長さが x の有効なシフトの個数
-    // M[x] : 長さがちょうど x の有効なシフトの個数
-    // A[x] = \sum_{s | x} M[s] で求められる
-    // A[x] は、xの長さでシフトを見たときの?の個数をcとしたとき、2^c
+    LL(N, K);
+    VEC(ll, a, N);  
 
+    // 連続 K 個同じ色があれば、任意の組み合わせが表現できる
+    vll b;
+    for (auto s : a) b.pb(max(0LL, s));
 
-    map<ll, Mint> A, M;
+    CumulativeSum<ll> A(a), B(b);
 
-    vll div = divisor(N);
-    for (auto x : div) {
-        string t = "";
-        rep(i, x) t.pb('?');
-        rep(i, N) if (S[i] == '.') {
-            t[i % x] = '#';
-        }
-        int c = count(all(t), '?');
-        A[x] = Mint(2).pow(c);
-    }
+    ll ans = -INF;
 
+    ll base = B.sum(0, N);
+    for (int i = 0; i < N - K + 1; i++) {
+        int j = i + K;
+        ll dec = B.sum(i, j);
+        ll now = base - dec;
 
-    Mint ans = 0;
-    for (auto x : div) {
-        Mint res = A[x];
-        for (auto s : div) if (x != s && x % s == 0) {
-            res -= M[s];
-        }
-        M[x] = res;
-        if (x != N) ans += res;
+        // 黒く塗ったとき
+        chmax(ans, now + A.sum(i, j));
+
+        // 白く塗ったとき
+        chmax(ans, now);
     }
 
     OUT(ans);
 
+    
+    
+   
+
+    
 }
