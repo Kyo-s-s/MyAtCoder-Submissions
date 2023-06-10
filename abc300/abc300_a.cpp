@@ -1,10 +1,8 @@
-#pragma region header
 #include <bits/stdc++.h>
 using namespace std;
 // #include <atcoder/all>
 // using namespace atcoder;
 
-// clang-format off
 /* alias */
 using ull = unsigned long long;
 using ll = long long;
@@ -28,7 +26,6 @@ template<typename T> using min_priority_queue = priority_queue<T, vector<T>, gre
 #define MOD 998244353
 // #define MOD 1000000007
 #define INF (1LL << 60)
-#define inf (1 << 28)
 #define elif else if
 #define pb push_back
 #define pf push_front
@@ -67,6 +64,7 @@ struct popopo{ popopo(){ cin.tie(0); ios::sync_with_stdio(0); cout << fixed << s
 // n = 1,...,N に対して、n % A < B を満たすものの数 
 ll Count_of_n_mod_A_less_than_B(ll N, ll A, ll B){ return N / A * min(A, B) + min(N % A, B - 1); }
 
+bool include(ll l, ll r, ll x) { return l <= x && x < r; }
 
 /* IN/OUT */
 int scan() { return getchar(); }
@@ -95,21 +93,24 @@ template<class Head, class... Tail> void OUT(const Head &head, const Tail &...ta
 
 void FLASH(){ cout << endl; }
 template<class Head, class... Tail> void FLASH(const Head  &head, const Tail &...tail) { output(head); if(sizeof...(tail)) cout << " "; FLASH(tail...); }
-// clang-format on
 
-#pragma endregion header    
+namespace kyo {
+
+long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { while (abs(ok - ng) > 1) { long long mid = ok + (ng - ok) / 2; (is_ok(mid) ? ok : ng) = mid; } return ok; }
+
+}
+
+
 
 int main() {
-
+    
     LL(N, A, B);
-    VEC(ll, C, N);   
+    VEC(ll, C, N);
 
     ll ans = -1;
-
-    rep(i, N) {
-        if (A + B == C[i]) {
-            ans = i + 1;
-        }
+    rep(i, N) if (C[i] == A + B) {
+        ans = i + 1;
     }
+    
     OUT(ans);
 }
