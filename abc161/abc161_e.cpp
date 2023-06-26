@@ -159,25 +159,25 @@ int main() {
     LL(N, K, C);
     STR(S);
 
-    Segtree<Max_M> be(N), af(N);
+    vector<int> dp(N, 0), pd(N, 0);
 
     for (int i = 0; i < N; i++) {
-        if (S[i] != 'o') continue;
-        ll l = max(0LL, i - C);
-        ll g = be.prod(0, l);
-        be.set(i, g + 1);
+        ll g = (i - C - 1 < 0 ? 0 : dp[i - C - 1]);
+        if (S[i] == 'o') g++;
+        dp[i] = g;
+        if (0 <= i - 1) chmax(dp[i], dp[i - 1]);
     }
-
+    
     for (int i = N - 1; i >= 0; i--) {
-        if (S[i] != 'o') continue;
-        ll l = min(N, i + C + 1);
-        ll g = af.prod(l, N);
-        af.set(i, g + 1);
+        ll g = (i + C + 1>= N ? 0 : pd[i + C + 1]);
+        if (S[i] == 'o') g++;
+        pd[i] = g;
+        if (i + 1 < N) chmax(pd[i], pd[i + 1]);
     }
-
+    
     vll ans;
     for (int i = 0; i < N; i++) if (S[i] == 'o') {
-        ll g = be.prod(0, i) + af.prod(i + 1, N);
+        ll g = (0 <= i - 1 ? dp[i - 1] : 0LL) + (i + 1 < N ? pd[i + 1] : 0LL);
         if (g < K) ans.pb(i + 1);
     }
 
