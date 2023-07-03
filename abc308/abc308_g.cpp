@@ -100,117 +100,121 @@ long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { 
 
 }
 
-template<class T> struct erase_min_priority_queue {
-    min_priority_queue<T> que;
-    min_priority_queue<T> del_que;
-    void push(T x) { 
-        que.push(x); 
-        // cout << "push " << x << endl;
+template<class T> struct Set : public std::set<T> {
+    using std::set<T>::set;
+
+    optional<T> geq_min(T x) {
+        auto it = this->lower_bound(x);
+        if (it == this->end()) return nullopt;
+        return *it;
     }
-    void erase(T x) { 
-        del_que.push(x); 
-        // cout << "erase " << x << endl;
+
+    optional<T> ge_min(T x) {
+        auto it = this->upper_bound(x);
+        if (it == this->end()) return nullopt;
+        return *it;
     }
-    T top() {
-        while(!del_que.empty() && que.top() == del_que.top()) {
-            que.pop();
-            del_que.pop();
-        }
-        return que.top();
+
+    optional<T> leq_max(T x) {
+        auto it = this->upper_bound(x);
+        if (it == this->begin()) return nullopt;
+        return *prev(it);
     }
-    void pop() {
-        while(!del_que.empty() && que.top() == del_que.top()) {
-            que.pop();
-            del_que.pop();
-        }
-        que.pop();
+
+    optional<T> le_max(T x) {
+        auto it = this->lower_bound(x);
+        if (it == this->begin()) return nullopt;
+        return *prev(it);
     }
 };
 
+template<class T> struct MultiSet : public std::multiset<T> {
+    using std::multiset<T>::multiset;
+
+    optional<T> geq_min(T x) {
+        auto it = this->lower_bound(x);
+        if (it == this->end()) return nullopt;
+        return *it;
+    }
+
+    optional<T> ge_min(T x) {
+        auto it = this->upper_bound(x);
+        if (it == this->end()) return nullopt;
+        return *it;
+    }
+
+    optional<T> leq_max(T x) {
+        auto it = this->upper_bound(x);
+        if (it == this->begin()) return nullopt;
+        return *prev(it);
+    }
+
+    optional<T> le_max(T x) {
+        auto it = this->lower_bound(x);
+        if (it == this->begin()) return nullopt;
+        return *prev(it);
+    }
+
+    optional<T> max() {
+        if (this->empty()) return nullopt;
+        return *prev(this->end());
+    }
+
+    optional<T> min() {
+        if (this->empty()) return nullopt;
+        return *this->begin();
+    }
+
+    void erase_one(T x) {
+        auto it = this->find(x);
+        if (it != this->end()) this->erase(it);
+    }
+};
 
 int main() {
 
-    INT(Q);
-    erase_min_priority_queue<ll> que;
-    multiset<ll> st;
+    LL(Q);
+    MultiSet<ll> vals, xors;
 
     while (Q--) {
         LL(t);
         if (t == 1) {
             LL(x);
+            auto ma = vals.ge_min(x);
+            auto mi = vals.leq_max(x);
 
-            if (st.size() == 0) {
-                st.insert(x);
-                continue;
+            if (ma) {
+                xors.insert(ma.value() ^ x);
             }
-
-            auto itp = st.lower_bound(x);
-            ll ma = INF;
-            if (itp != st.end()) {
-                ma = *itp;
-                que.push(ma ^ x);
+            if (mi) {
+                xors.insert(mi.value() ^ x);
             }
-
-            auto itm = itp; itm--;
-            ll mi = INF;
-            if (itp != st.begin()) {
-                mi = *itm;
-                que.push(mi ^ x);
+            if (ma && mi) {
+                xors.erase_one(ma.value() ^ mi.value());
             }
-
-            if (ma != INF && mi != INF) {
-                que.erase(ma ^ mi);
-            }
-
-
-
-            // // st の中で、x以上の最小
-            // if (st.size() != 0) {
-            //     auto it = st.lower_bound(x);
-            //     ll ma = -INF;
-            //     if (it != st.end()) {
-            //         ll ma = *it;
-            //         que.push(ma ^ x);
-            //     }
-
-            //     if (it != st.begin()) {
-            //         it--;
-            //         ll mi = *it;
-            //         que.push(mi ^ x);
-            //         if (ma != -INF) {
-            //             que.erase(mi ^ ma);
-            //         }
-            //     }
-            // }
-            st.insert(x);
+            vals.insert(x);
         }
+
         if (t == 2) {
             LL(x);
+            vals.erase(vals.find(x));
+            auto ma = vals.ge_min(x);
+            auto mi = vals.leq_max(x);
 
-            // 必ず存在する
-            auto it = st.lower_bound(x);
-            auto itp = it; itp++;
-            ll ma = INF;
-            if (itp != st.end()) {
-                ma = *itp;
-                que.erase(ma ^ x);
+            if (ma) {
+                xors.erase_one(ma.value() ^ x);
             }
-
-            ll mi = INF;
-            auto itm = it; itm--;
-            if (it != st.begin()) {
-                mi = *itm;
-                que.erase(mi ^ x);
+            if (mi) {
+                xors.erase_one(mi.value() ^ x);
             }
-
-            if (ma != INF && mi != INF) {
-                que.push(mi ^ ma);
+            if (ma && mi) {
+                xors.insert(ma.value() ^ mi.value());
             }
-
-            st.erase(st.find(x));
         }
+
         if (t == 3) {
-            OUT(que.top());
+            auto ans = xors.min();
+            cout << ans.value() << endl;
         }
     }
     
