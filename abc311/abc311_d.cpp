@@ -107,67 +107,31 @@ int main() {
     LL(N, M);
     VEC(string, S, N);
 
+    vvi vis(N, vi(M, 0));
 
-    vpll dxy = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
-    // 止まった
-    vvb vis(N, vb(M, false));
-    // 通過した
-    vvb ok(N, vb(M, false));
+    vpii dhw = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 
-    deque<pll> que;
-    que.push_back({1, 1});
-    vis[1][1] = true;
-    ok[1][1] = true;
+    auto dfs = [&](auto&& dfs, int h, int w) -> void {
+        if (vis[h][w] == 2) return;
+        vis[h][w] = 2;
 
-
-    while (!que.empty()) {
-        auto [x, y] = que.front(); 
-        que.pop_front();
-
-        auto go = [&](ll x, ll y, int i) -> optional<pll> {
-            auto nx = x + dxy[i].fi;
-            auto ny = y + dxy[i].se;
-            // if (!include(0LL, N, nx) || !include(0LL, M, ny)) return nullopt;
-            if (S[nx][ny] == '#') return nullopt;
-            ok[nx][ny] = true;
-
-            while (true) {
-                ll nnx = nx + dxy[i].fi;
-                ll nny = ny + dxy[i].se;
-                // if (!include(0LL, N, nnx) || !include(0LL, M, nny) || S[nnx][nny] == '#') {
-                if (S[nnx][nny] == '#') {
-                    if (vis[nx][ny]) {
-                        return nullopt;
-                    }
-                    vis[nx][ny] = true;
-                    return make_pair(nx, ny);
-                }
-                ok[nnx][nny] = true;
-                nx = nnx;
-                ny = nny;
+        for (auto [dh, dw] : dhw) {
+            int nh = h, nw = w;
+            while (S[nh][nw] != '#') {
+                chmax(vis[nh][nw], 1);
+                nh += dh;
+                nw += dw;
             }
-        };
-
-        rep(i, 4) {
-            auto res = go(x, y, i);
-            if (res) {
-                auto [nx, ny] = res.value();
-                que.push_back({nx, ny});
-            }
+            dfs(dfs, nh - dh, nw - dw);
         }
-    }
+    };
 
-
+    dfs(dfs, 1, 1);
     ll ans = 0;
-    rep(i, N) rep(j, M) {
-        if (ok[i][j]) {
-            ans++;
-            S[i][j] = 'o';
-        }
-    }
-
+    rep(h, N) rep(w, M) ans += vis[h][w] != 0;
     OUT(ans);
 
-    // fore(s, S) OUT(s);   
-    
+
+
+
 }

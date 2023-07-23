@@ -161,14 +161,10 @@ int main() {
     
 
     LL(H, W, N);
-    vector<Segtree<Max_M>> Hs(H, Segtree<Max_M>(W));
-    vector<Segtree<Max_M>> Ws(W, Segtree<Max_M>(H));
     vvll F(H, vll(W, 0));
 
     rep(i, N) {
         LL(a, b); a--; b--;
-        Hs[a].set(b, b);
-        Ws[b].set(a, a);
         F[a][b] = 1;
     }
 
@@ -176,17 +172,10 @@ int main() {
 
     rep(h, H) rep(w, W) {
         if (F[h][w] == 1) continue;
-        dp[h][w] = 1;
-        if (h > 0 && w > 0) {
-            ll dh = Hs[h].prod(0, w + 1);
-            ll dw = Ws[w].prod(0, h + 1);
-            if (dh == -INF) dh = h;
-            else dh = w - dh - 1;
-            if (dw == -INF) dw = w;
-            else dw = h - dw - 1;
-            dp[h][w] += min(dp[h-1][w-1], min(dh, dw));
-            // OUT(h, w, " ", dp[h - 1][w - 1], dh, dw);
-        }
+        ll a = (h == 0 ? 0 : dp[h - 1][w]);
+        ll b = (w == 0 ? 0 : dp[h][w - 1]);
+        ll c = (h == 0 || w == 0 ? 0 : dp[h - 1][w - 1]);
+        dp[h][w] = min(min(a, b), c) + 1;
     }
 
 
