@@ -200,10 +200,37 @@ using Modint1000000007 = StaticModint<1000000007>;
 
 using Mint = Modint998244353;
 
+
+template<class T> using vec = vector<T>;
+template<class T> using vec2 = vec<vec<T>>;
+template<class T> using vec3 = vec<vec2<T>>;
+template<class T> using vec4 = vec<vec3<T>>;
+template<class T> using vec5 = vec<vec4<T>>;
+template<class T> using vec6 = vec<vec5<T>>;
+
+template<class T> vec2<T> make_vec2(int a, int b, T init = T()) {
+    return vec(a, vec(b, init));
+}
+template<class T> vec3<T> make_vec3(int a, int b, int c, T init = T()) {
+    return vec(a, make_vec2<T>(b, c, init));
+}
+template<class T> vec4<T> make_vec4(int a, int b, int c, int d, T init = T()) {
+    return vec(a, make_vec3<T>(b, c, d, init));
+}
+template<class T> vec5<T> make_vec5(int a, int b, int c, int d, int e, T init = T()) {
+    return vec(a, make_vec4<T>(b, c, d, e, init));
+}
+template<class T> vec6<T> make_vec6(int a, int b, int c, int d, int e, int f, T init = T()) {
+    return vec(a, make_vec5<T>(b, c, d, e, f, init));
+}
+
+
+
 int main() {
     
     LL(N, A1, A2, A3);
-    vector dp(8, vector(8, vector(A1, vector(A2, vector<Mint>(A3, 0)))));
+    // vector dp(8, vector(8, vector(A1, vector(A2, vector<Mint>(A3, 0)))));
+    vec5<Mint> dp = make_vec5(8, 8, A1, A2, A3, Mint(0));
     // 各bit 0ならtight, 1ならsml
     dp[0][0][0][0][0] = 1;
 
@@ -234,7 +261,8 @@ int main() {
         ll a1 = mypow((int)Nb.size() - 1 - i, A1);
         ll a2 = mypow((int)Nb.size() - 1 - i, A2);
         ll a3 = mypow((int)Nb.size() - 1 - i, A3);
-        vector pd(8, vector(8, vector(A1, vector(A2, vector<Mint>(A3, 0)))));
+        // vector pd(8, vector(8, vector(A1, vector(A2, vector<Mint>(A3, 0)))));
+        auto pd = make_vec5(8, 8, A1, A2, A3, Mint(0));
 
 
         rep(x, 8) rep(y, 8) {
