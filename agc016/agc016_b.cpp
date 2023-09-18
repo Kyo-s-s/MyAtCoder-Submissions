@@ -100,118 +100,46 @@ long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { 
 
 }
 
-template<class M> struct Segtree {
-  public:
-    using S = typename M::T;
 
-    Segtree() : Segtree(0) {}
-    Segtree(int n) : Segtree(vector<S> (n, M::e())) {}
-    Segtree(const vector<S> &v) : n(int(v.size())) { 
-        while((1 << log) < n) log++;
-        size = 1 << log;
-        d = vector<S> (2 * size, M::e());
-        for(int i = 0; i < n; i++) d[size + i] = v[i];
-        for(int i = size - 1; i >= 1; i--) update(i);
-    }
-
-    void set(int p, S x) {
-        assert(0 <= p && p < n);
-        p += size;
-        d[p] = x;
-        for(int i = 1; i <= log; i++) update(p >> i);
-    }
-
-    S get(int p) {
-        assert(0 <= p && p < n);
-        return d[p + size];
-    }
-
-    S prod(int l, int r) {
-        assert(0 <= l && l <= r && r <= n);
-        S sml = M::e(), smr = M::e();
-        l += size; r += size;
-        while(l < r) {
-            if(l & 1) sml = M::op(sml, d[l++]);
-            if(r & 1) smr = M::op(d[--r], smr);
-            l >>= 1; r >>= 1;
-        }
-        return M::op(sml, smr);
-    }
-
-    S all_prod(){ return d[1]; }
-
-
-  private:
-    int n, size, log = 0;
-    vector<S> d;
-    void update(int k){ d[k] = M::op(d[k * 2], d[k * 2 + 1]); }
-
-};
-
-struct Min_M {    
-    using T = long long;
-    static T e() { return INF; }
-    static T op(T x, T y) { return min(x, y); }
-};
 
 int main() {
     
-    LL(N, K);   
+    LL(N);
     VEC(ll, A, N);
 
-    // K個増加列があればそのまま
-    if ([&]() {
-        ll a = 1;
-        for (int i = 1; i < N; i++) {
-            if (A[i - 1] < A[i]) a++;
-            else a = 1;
-            if (a >= K) return true;
+    sort(all(A));
+
+    if (A.back() - A[0] > 1) {
+        YesNo(false);
+        return 0;
+    }
+    ll x = A[0];
+    ll c = [&]() {
+        ll ret = 0;
+        rep(i, N) {
+            if (A[i] == x) ret++;
         }
-        return false;
-    }()) {
-        OUT(A);
+        return ret;
+    }();
+    ll y = A.back();
+
+    if (A.back() - A[0] == 0) {
+        YesNo(N >= x * 2 || N == x + 1);
         return 0;
     }
 
-    // K == N
-    if (K == N) {
-        sort(all(A));
-        OUT(A);
-        return 0;
+    ll n = N;
+    rep(i, x + 1) {
+        if (i < c) {
+            n--;
+        } else {
+            n--; n--;
+        }
     }
 
-    Segtree<Min_M> seg(A);
-
-    ll st = N - K;
-    ll xi = st - 1;
-    ll y = A[N - K - 1];
-
-    while (true) {
-        if (A[xi] > A[xi + 1]) break;
-        if (y < seg.prod(N - K, xi + K)) chmin(st, xi);
-        if (xi == 0) break;
-        xi--;
-    }
-
-    auto ch = [&](int idx) -> vll {
-        vll C;
-        for (int i = idx; i < idx + K; i++) {
-            C.pb(A[i]);
-        }
-        sort(all(C));
-        vll B = A;
-        for (int i = idx; i < idx + K; i++) {
-            B[i] = C[i - idx];
-        }
-        return B;
-    };
-
-    vll X = ch(st);
-    vll Y = ch(N - K);
+    YesNo(n >= 0 && x >= c);
 
 
-    auto ans = max(X, Y);
-    OUT(ans);
 
 
 }

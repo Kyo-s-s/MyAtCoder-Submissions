@@ -152,7 +152,8 @@ int main() {
     };
 
 
-    ll ok = 0, ng = INF + 1;
+    ll ok = 0, ng = 1;
+    while (judge(ng)) ng *= 2;
     while (abs(ok - ng) > 1) {
         ll mid = ok + (ng - ok) / 2;
         (judge(mid) ? ok : ng) = mid;
