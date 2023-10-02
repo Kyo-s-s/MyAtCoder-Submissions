@@ -209,9 +209,11 @@ struct Hand {
         return right - left == ma;
     }
 
-    static Hand marge(Hand a, Hand b) {
-        if (a == Hand{0, 0, 0, 0, 0}) return b;
-        if (b == Hand{0, 0, 0, 0, 0}) return a;
+    static optional<Hand> marge(optional<Hand> an, optional<Hand> bn) {
+        if (!an) return bn;
+        if (!bn) return an;
+        Hand a = an.value();
+        Hand b = bn.value();
         if (a.connect() && b.connect()) {
             return Hand{a.left, b.right, a.cl + b.cl, a.cr + b.cr, a.ma + b.ma};
         }
@@ -231,13 +233,12 @@ struct Hand {
         int cr = b.cr;
         int ma = max(max(max(a.ma, b.ma), max(cl, cr)), a.cr + b.cl);
         return Hand{a.left, b.right, cl, cr, ma};
-
     }
 };
 
 struct M {
     struct T {
-        Hand o, i; 
+        optional<Hand> o, i; 
     };
 
     static T op(T a, T b) {
@@ -245,7 +246,8 @@ struct M {
     }
 
     static T e() {
-        return T{Hand{0, 0, 0, 0, 0}, Hand{0, 0, 0, 0, 0}};
+        // return T{Hand{0, 0, 0, 0, 0}, Hand{0, 0, 0, 0, 0}};
+        return T{nullopt, nullopt};
     }
 };
 
@@ -290,11 +292,24 @@ int main() {
             seg.apply(l, r + 1, true);
         } else {
             M::T res = seg.prod(l, r + 1);
-            OUT(res.i.ma);
+            if (!res.i) {
+                return 1;
+            }
+            OUT(res.i.value().ma);
         }
     }
-
-
-
     
 }
+
+
+/*
+C: あ、あの　実装ミスってWAです
+D: ピースの構造体を作るなどするとよいですね
+E: なんだこれ　DPやるだけ
+F: 連続する'x'の長さの最大値、左から連続する'x'の個数、右から連続する'x'の個数 などを持つとモノイドになるので遅延セグ木に乗せます
+
+
+何か今日パフォしょっぱくない？最強コンあったから？
+
+*/
+
