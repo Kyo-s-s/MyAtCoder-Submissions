@@ -100,82 +100,107 @@ long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { 
 
 }
 
-struct UnionFind {
-    int n, cnt;
-    vector<int> parent;
-    UnionFind() : n(0), cnt(0) {}
-    UnionFind(int n) : n(n), cnt(n), parent(n, -1) {}
+template<class M> struct Segtree {
+  public:
+    using S = typename M::T;
 
-    int merge(int a, int b) {
-        assert(0 <= a && a < n && 0 <= b && b < n);
-        int x = leader(a), y = leader(b);
-        if (x == y) return x;
-        if (-parent[x] < -parent[y]) swap(x, y);
-        parent[x] += parent[y];
-        parent[y] = x;
-        cnt--;
-        return x;
-    } 
-
-    int leader(int a) {
-        assert(0 <= a && a < n);
-        if (parent[a] < 0) return a;
-        return parent[a] = leader(parent[a]);
+    Segtree() : Segtree(0) {}
+    Segtree(int n) : Segtree(vector<S> (n, M::e())) {}
+    Segtree(const vector<S> &v) : n(int(v.size())) { 
+        while((1 << log) < n) log++;
+        size = 1 << log;
+        d = vector<S> (2 * size, M::e());
+        for(int i = 0; i < n; i++) d[size + i] = v[i];
+        for(int i = size - 1; i >= 1; i--) update(i);
     }
 
-    bool same(int a, int b) {
-        assert(0 <= a && a < n && 0 <= b && b < n);
-        return leader(a) == leader(b);
+    void set(int p, S x) {
+        assert(0 <= p && p < n);
+        p += size;
+        d[p] = x;
+        for(int i = 1; i <= log; i++) update(p >> i);
     }
 
-    int size(int a) {
-        assert(0 <= a && a < n);
-        return -parent[leader(a)];
+    S get(int p) {
+        assert(0 <= p && p < n);
+        return d[p + size];
     }
 
-    int count() { return cnt; }
-
-    vector<vector<int>> groups() {
-        vector<int> leader_buf(n), group_size(n);
-        for (int i = 0; i < n; i++) {
-            leader_buf[i] = leader(i);
-            group_size[leader_buf[i]]++;
+    S prod(int l, int r) {
+        assert(0 <= l && l <= r && r <= n);
+        S sml = M::e(), smr = M::e();
+        l += size; r += size;
+        while(l < r) {
+            if(l & 1) sml = M::op(sml, d[l++]);
+            if(r & 1) smr = M::op(d[--r], smr);
+            l >>= 1; r >>= 1;
         }
-        vector<vector<int>> result(n);
-        for (int i = 0; i < n; i++) {
-            result[i].reserve(group_size[i]);
-        }
-        for (int i = 0; i < n; i++) {
-            result[leader_buf[i]].push_back(i);
-        }
-        result.erase(
-            remove_if(result.begin(), result.end(),
-                      [&](const vector<int> &v) { return v.empty(); }),
-            result.end());
-        return result;
+        return M::op(sml, smr);
     }
+
+    S all_prod(){ return d[1]; }
+
+
+  private:
+    int n, size, log = 0;
+    vector<S> d;
+    void update(int k){ d[k] = M::op(d[k * 2], d[k * 2 + 1]); }
+
 };
 
+struct Min_M {    
+    using T = long long;
+    static T e() { return INF; }
+    static T op(T x, T y) { return min(x, y); }
+};
+
+
 int main() {
-    
+
     LL(N, Q);
-    VEC(ll, C, N);
+    VEC(ll, A, N);    
 
-    vector<set<ll>> color(N);
-    rep(i, N) {
-        color[i].insert(C[i]);
+    vll v(202020);
+    vll count(202020);
+    rep(i, 202020) v[i] = i;
+    fore (a, A) if (a < v.size()) {
+        v[a] = INF;
+        count[a]++;
     }
+
+    Segtree<Min_M> seg(v);
+
+    auto off = [&](ll val) {
+        if (val < v.size()) {
+            if (--count[val] == 0) {
+                seg.set(val, val);
+            }
+        }
+    };
+
+    auto on = [&](ll val) {
+        if (val < v.size()) {
+            if (count[val]++ == 0) {
+                seg.set(val, INF);
+            }
+        }
+    };
+
+    auto change = [&](ll idx, ll val) {
+        off(A[idx]);  
+        on(val);
+        A[idx] = val;
+    };
+
     while (Q--) {
-        LL(a, b); a--; b--;
+        LL(i, x); i--;
+        change(i, x);
+        ll ans = seg.all_prod();
+        OUT(ans);
 
-        if (color[a].size() > color[b].size()) {
-            swap(color[a], color[b]);
-        }
-        for (auto c : color[a]) {
-            color[b].insert(c);
-        }
-        color[a].clear();
-        OUT(color[b].size());
+        // vll va;
+        // rep(i, 10) va.pb(seg.get(i));
+        // OUT(va);
     }
+    
 }
-

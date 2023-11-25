@@ -100,82 +100,88 @@ long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { 
 
 }
 
-struct UnionFind {
-    int n, cnt;
-    vector<int> parent;
-    UnionFind() : n(0), cnt(0) {}
-    UnionFind(int n) : n(n), cnt(n), parent(n, -1) {}
-
-    int merge(int a, int b) {
-        assert(0 <= a && a < n && 0 <= b && b < n);
-        int x = leader(a), y = leader(b);
-        if (x == y) return x;
-        if (-parent[x] < -parent[y]) swap(x, y);
-        parent[x] += parent[y];
-        parent[y] = x;
-        cnt--;
-        return x;
-    } 
-
-    int leader(int a) {
-        assert(0 <= a && a < n);
-        if (parent[a] < 0) return a;
-        return parent[a] = leader(parent[a]);
-    }
-
-    bool same(int a, int b) {
-        assert(0 <= a && a < n && 0 <= b && b < n);
-        return leader(a) == leader(b);
-    }
-
-    int size(int a) {
-        assert(0 <= a && a < n);
-        return -parent[leader(a)];
-    }
-
-    int count() { return cnt; }
-
-    vector<vector<int>> groups() {
-        vector<int> leader_buf(n), group_size(n);
+template<class T> struct CumulativeSum {
+    int n;
+    vector<T> data; 
+    bool builded = false;
+    CumulativeSum(int n) : n(n), data(n + 1) {}
+    CumulativeSum(const vector<T> &v) : n(v.size()), data(n + 1) {
         for (int i = 0; i < n; i++) {
-            leader_buf[i] = leader(i);
-            group_size[leader_buf[i]]++;
+            data[i + 1] = v[i];
         }
-        vector<vector<int>> result(n);
-        for (int i = 0; i < n; i++) {
-            result[i].reserve(group_size[i]);
-        }
-        for (int i = 0; i < n; i++) {
-            result[leader_buf[i]].push_back(i);
-        }
-        result.erase(
-            remove_if(result.begin(), result.end(),
-                      [&](const vector<int> &v) { return v.empty(); }),
-            result.end());
-        return result;
     }
+
+    void build() {
+        for (int i = 0; i < n; i++) {
+            data[i + 1] += data[i];
+        }
+        builded = true;
+    }
+
+    T sum(int r) {
+        if (!builded) build();
+        assert(0 <= r && r <= n);
+        return data[r];
+    }
+
+    T sum(int l, int r) {
+        assert(0 <= l && l <= r && r <= n);
+        return sum(r) - sum(l);
+    }
+
 };
+
 
 int main() {
     
-    LL(N, Q);
-    VEC(ll, C, N);
+    LL(N, K);
+    vll X(N), Y(N);
+    rep(i, N) cin >> X[i] >> Y[i];
 
-    vector<set<ll>> color(N);
-    rep(i, N) {
-        color[i].insert(C[i]);
-    }
-    while (Q--) {
-        LL(a, b); a--; b--;
+    sort(all(X));
+    sort(all(Y));
 
-        if (color[a].size() > color[b].size()) {
-            swap(color[a], color[b]);
+    
+    CumulativeSum<ll> Xcs(X), Ycs(Y);
+
+    auto minCost = [&](
+        vll &vec, 
+        CumulativeSum<ll> &cs, 
+        ll k
+    ) -> ll {
+        ll res = INF;
+        vll C;
+        fore(v, vec) {
+            C.pb(v);
+            C.pb(v - k);
         }
-        for (auto c : color[a]) {
-            color[b].insert(c);
+
+        fore(v, C) {
+            ll now = 0;
+            ll p1 = lower_bound(all(vec), v) - vec.begin();
+            now += v * p1 - cs.sum(p1);
+            ll p2 = upper_bound(all(vec), v + k) - vec.begin();
+            now += cs.sum(p2, N) - (v + k) * (N - p2);
+            chmin(res, now);
         }
-        color[a].clear();
-        OUT(color[b].size());
-    }
+
+        return res;
+    };
+
+    auto check = [&](ll k) -> bool {
+        ll cost = minCost(X, Xcs, k) + minCost(Y, Ycs, k);
+
+        // cout << k << " " << minCost(X, Xcs, k) << " " << minCost(Y, Ycs, k) << endl;
+
+        return cost <= K;
+    };
+
+
+    ll ok = 2000000000LL, ng = -1;
+    ll ans = kyo::bisect(ok, ng, check);
+    cout << ans << endl;
+
+    // OUT(Xcs.data);
+    // OUT(Ycs.data);
+    
 }
-
