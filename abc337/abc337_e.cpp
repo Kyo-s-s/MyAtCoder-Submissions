@@ -125,11 +125,9 @@ int main() {
     cout << M << endl;
     fore(d, D) {
         cout << d.size() << " ";
-        // OUT(d);
-        for (auto e : d) cout << e << " ";
-        cout << endl;
+        FLASH(d);
     }
-    // FLASH();
+    
 
     STR(S);
     reverse(all(S));
