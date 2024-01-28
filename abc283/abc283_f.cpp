@@ -1,55 +1,105 @@
 #ifdef INCLUDED_MAIN
 
+template<class M> struct Segtree {
+  public:
+    using S = typename M::T;
+
+    Segtree() : Segtree(0) {}
+    Segtree(int n) : Segtree(vector<S> (n, M::e())) {}
+    Segtree(const vector<S> &v) : n(int(v.size())) { 
+        while((1 << log) < n) log++;
+        size = 1 << log;
+        d = vector<S> (2 * size, M::e());
+        for(int i = 0; i < n; i++) d[size + i] = v[i];
+        for(int i = size - 1; i >= 1; i--) update(i);
+    }
+
+    void set(int p, S x) {
+        assert(0 <= p && p < n);
+        p += size;
+        d[p] = x;
+        for(int i = 1; i <= log; i++) update(p >> i);
+    }
+
+    S get(int p) {
+        assert(0 <= p && p < n);
+        return d[p + size];
+    }
+
+    S prod(int l, int r) {
+        assert(0 <= l && l <= r && r <= n);
+        S sml = M::e(), smr = M::e();
+        l += size; r += size;
+        while(l < r) {
+            if(l & 1) sml = M::op(sml, d[l++]);
+            if(r & 1) smr = M::op(d[--r], smr);
+            l >>= 1; r >>= 1;
+        }
+        return M::op(sml, smr);
+    }
+
+    S all_prod(){ return d[1]; }
+
+
+  private:
+    int n, size, log = 0;
+    vector<S> d;
+    void update(int k){ d[k] = M::op(d[k * 2], d[k * 2 + 1]); }
+
+};
+
+struct Max_M {    
+    using T = long long;
+    static T e() { return -INF; }
+    static T op(T x, T y) { return max(x, y); }
+};
+
+struct Min_M {    
+    using T = long long;
+    static T e() { return INF; }
+    static T op(T x, T y) { return min(x, y); }
+};
+
 int main() {
 
-    LL(N, L, R);
-    VEC(ll, A, N);
+    LL(N);
+    VEC(ll, P, N);
+    fore(p, P) p--;
 
-    vll base;
-    for (auto v : A) {
-        for (auto e : base) {
-            v = min(v, v ^ e);
+
+
+    vvll D(2, vll(N, INF));
+    rep(d, 2) {
+        Segtree<Max_M> seg_max(N);
+        Segtree<Min_M> seg_min(N);
+
+        rep(i, N) {
+            ll a = [&]() {
+                ll g = seg_max.prod(0, P[i]);
+                if (g == -INF) return INF;
+                return P[i] + i - g;
+            }();
+            ll b = [&]() {
+                ll g = seg_min.prod(P[i], N);
+                if (g == INF) return INF;
+                return g - (P[i] - i);
+                // return INF;
+            }();
+            D[d][i] = min(a, b); 
+            seg_max.set(P[i], P[i] + i);
+            seg_min.set(P[i], P[i] - i);
         }
-        if (v > 0) base.push_back(v);
-    }    
 
-    sort(all(base));
-    reverse(all(base));
-
-    auto msb = [&](ll x) {
-        // x != 0
-        ll res = -1;
-        rep(i, 63) {
-            if ((x >> i) & 1) res = i;
-        }
-        return res;
-    };
-
-    rep(i, base.size()) rep(j, base.size()) if (i != j) {
-        ll m = msb(base[i]);
-        if ((base[j] >> m) & 1) {
-            base[j] ^= base[i];
-        }
+        reverse(all(P));
     }
 
-    sort(all(base));
+    reverse(all(D[1]));
+    
+    vll ans(N);
+    rep(i, N) ans[i] = min(D[0][i], D[1][i]);
 
-    // fore(b, base) {
-    //     cout << bitset<40>(b) << endl;
-    // }
-
-    vll ans;
-    L--; R--;
-    for (ll x = L; x <= R; x++) {
-        ll add = 0;
-        rep(i, (int)base.size()) {
-            if ((x >> i) & 1) {
-                add ^= base[i];
-            }
-        }
-        ans.pb(add);
-    }
-
+    // OUT(D[0]);
+    // OUT(D[1]);
     OUT(ans);
 
 }

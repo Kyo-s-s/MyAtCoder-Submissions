@@ -2,55 +2,32 @@
 
 int main() {
 
-    LL(N, L, R);
-    VEC(ll, A, N);
+    STR(S);
 
-    vll base;
-    for (auto v : A) {
-        for (auto e : base) {
-            v = min(v, v ^ e);
-        }
-        if (v > 0) base.push_back(v);
-    }    
+    set<char> box;
 
-    sort(all(base));
-    reverse(all(base));
+    string stack = "";
 
-    auto msb = [&](ll x) {
-        // x != 0
-        ll res = -1;
-        rep(i, 63) {
-            if ((x >> i) & 1) res = i;
-        }
-        return res;
-    };
+    bool ans = true;
 
-    rep(i, base.size()) rep(j, base.size()) if (i != j) {
-        ll m = msb(base[i]);
-        if ((base[j] >> m) & 1) {
-            base[j] ^= base[i];
-        }
-    }
-
-    sort(all(base));
-
-    // fore(b, base) {
-    //     cout << bitset<40>(b) << endl;
-    // }
-
-    vll ans;
-    L--; R--;
-    for (ll x = L; x <= R; x++) {
-        ll add = 0;
-        rep(i, (int)base.size()) {
-            if ((x >> i) & 1) {
-                add ^= base[i];
+    fore(c, S) {
+        if (c == '(') {
+        } else if (c == ')') {
+            while (true) {
+                char t = stack.back(); stack.pop_back();
+                if (t == '(') break;
+                box.erase(t);
             }
+        } else {
+            if (box.find(c) != box.end()) {
+                ans = false;
+                break;
+            }
+            box.insert(c);
         }
-        ans.pb(add);
+        stack.pb(c);
     }
-
-    OUT(ans);
+    YesNo(ans);
 
 }
 

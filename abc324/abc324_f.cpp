@@ -1,57 +1,43 @@
 #ifdef INCLUDED_MAIN
 
+struct edge {
+    int to;
+    ldf b, c;
+    edge(int to, ll b, ll c) : to(to), b(ldf((double)b)), c(ldf((double)c)) {}
+};
+
 int main() {
 
-    LL(N, L, R);
-    VEC(ll, A, N);
-
-    vll base;
-    for (auto v : A) {
-        for (auto e : base) {
-            v = min(v, v ^ e);
-        }
-        if (v > 0) base.push_back(v);
-    }    
-
-    sort(all(base));
-    reverse(all(base));
-
-    auto msb = [&](ll x) {
-        // x != 0
-        ll res = -1;
-        rep(i, 63) {
-            if ((x >> i) & 1) res = i;
-        }
-        return res;
-    };
-
-    rep(i, base.size()) rep(j, base.size()) if (i != j) {
-        ll m = msb(base[i]);
-        if ((base[j] >> m) & 1) {
-            base[j] ^= base[i];
-        }
+      LL(N, M); 
+    vector G(N, vector<edge>());
+    rep(i, M) {
+        LL(u, v, b, c); u--; v--;
+        G[u].pb(edge(v, b, c));
     }
 
-    sort(all(base));
+    auto judge = [&](double x) -> bool {
+        vector<ldf> dp(N, ldf::minusInf());
+        dp[0] = ldf(0.);
 
-    // fore(b, base) {
-    //     cout << bitset<40>(b) << endl;
-    // }
+        ldf xx(x);
 
-    vll ans;
-    L--; R--;
-    for (ll x = L; x <= R; x++) {
-        ll add = 0;
-        rep(i, (int)base.size()) {
-            if ((x >> i) & 1) {
-                add ^= base[i];
+        rep(i, N) {
+            if (dp[i].isMinusInf()) continue;
+            fore(e, G[i]) {
+                chmax(dp[e.to], dp[i] + e.b - xx * e.c);
             }
         }
-        ans.pb(add);
+        return dp[N - 1] < ldf(0.);
+    };
+
+    double ok = 1e18, ng = -1e18;
+    rep(i, 200) {
+        double mid = (ok + ng) / 2;
+        (judge(mid) ? ok : ng) = mid;
     }
 
-    OUT(ans);
 
+    OUT(ok);
 }
 
 #else
@@ -157,6 +143,104 @@ namespace kyo {
 long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { while (abs(ok - ng) > 1) { long long mid = ok + (ng - ok) / 2; (is_ok(mid) ? ok : ng) = mid; } return ok; }
 
 }
+
+
+
+// int, ll, float, double くらいしか載せないでほしい
+template<class T> class AddInf {
+  public:
+    static constexpr AddInf<T> plusInf() { return AddInf<T>{std::nullopt, true}; }
+    static constexpr AddInf<T> minusInf() { return AddInf<T>{std::nullopt, false}; }
+
+    constexpr AddInf() : val(0) {}
+    constexpr AddInf(optional<T> v, bool p = true) : val(v), plusInfFlag(p) {}
+
+    inline bool isPlusInf() const { return !val && plusInfFlag; }
+    inline bool isMinusInf() const { return !val && !plusInfFlag; }
+
+    inline bool isPlus() const { return val ? *val > 0 : plusInfFlag; }
+    inline bool isMinus() const { return !isPlus(); }
+
+    T value() const { assert(val); return *val; }
+
+    inline void update(const optional<T> &v, const bool p = true) {
+        val = v; plusInfFlag = p;
+    }
+
+    AddInf<T> operator+() const { return *this; }
+    AddInf<T> operator-() const {
+        return (val ? AddInf(-(*val)) : AddInf(std::nullopt, !plusInfFlag));
+    }
+
+    AddInf& operator+=(const AddInf &rhs) {
+        if (val && rhs.val) {
+            *val += *rhs.val;
+        } else {
+            assert((isPlus() && rhs.isMinus()) || (isMinus() && rhs.isPlus()));
+            update(std::nullopt, isPlus() || rhs.isPlus());
+        }
+        return *this;
+    }
+
+    AddInf& operator-=(const AddInf &rhs) { return *this += -rhs; }
+
+    AddInf& operator*=(const AddInf &rhs) {
+        if (val && rhs.val) {
+            *val *= *rhs.val;
+        } else {
+            assert(!(isPlusInf() && rhs.isMinusInf()) && !(isMinusInf() && rhs.isPlusInf())); 
+            update(std::nullopt, (isPlus() && rhs.isPlus()) || (isMinus() && rhs.isMinus()));
+        }
+        return *this;
+    }
+
+    AddInf& operator/=(const AddInf &rhs) {
+        if (val && rhs.val) {
+            *val /= *rhs.val;
+        } else {
+            assert(rhs.val);
+            if (rhs.isMinus()) update(std::nullopt, !plusInfFlag);
+        }
+        return *this;
+    }
+
+    friend AddInf operator+(const AddInf &lhs, const AddInf &rhs) { return AddInf(lhs) += rhs; }
+    friend AddInf operator-(const AddInf &lhs, const AddInf &rhs) { return AddInf(lhs) -= rhs; }
+    friend AddInf operator*(const AddInf &lhs, const AddInf &rhs) { return AddInf(lhs) *= rhs; }
+    friend AddInf operator/(const AddInf &lhs, const AddInf &rhs) { return AddInf(lhs) /= rhs; }
+
+    bool operator==(const AddInf &rhs) const {
+        if (val && rhs.val) return *val == *rhs.val;
+        return plusInfFlag == rhs.plusInfFlag;
+    }
+    bool operator<(const AddInf &rhs) const {
+        if (val && rhs.val) return *val < *rhs.val;
+        return !plusInfFlag && rhs.plusInfFlag;
+    }
+    bool operator>(const AddInf &rhs) const {
+        if (val && rhs.val) return *val > *rhs.val;
+        return plusInfFlag && !rhs.plusInfFlag;
+    }
+    bool operator<=(const AddInf &rhs) const { return !(*this > rhs); }
+    bool operator>=(const AddInf &rhs) const { return !(*this < rhs); }
+    bool operator!=(const AddInf &rhs) const { return !(*this == rhs); }
+
+    friend ostream &operator<<(ostream &os, const AddInf &x) {
+        if (x.val) {
+            os << *x.val;
+        } else {
+            os << (x.plusInfFlag ? "+Inf" : "-Inf");
+        }
+        return (os);
+    }
+
+  private:
+    optional<T> val;
+    bool plusInfFlag;
+};
+
+using ldf = AddInf<long double>;
+
 
 #define INCLUDED_MAIN
 #include __FILE__ // Codeforces で壊れるらしい

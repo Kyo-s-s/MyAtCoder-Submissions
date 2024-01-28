@@ -1,61 +1,3 @@
-#ifdef INCLUDED_MAIN
-
-int main() {
-
-    LL(N, L, R);
-    VEC(ll, A, N);
-
-    vll base;
-    for (auto v : A) {
-        for (auto e : base) {
-            v = min(v, v ^ e);
-        }
-        if (v > 0) base.push_back(v);
-    }    
-
-    sort(all(base));
-    reverse(all(base));
-
-    auto msb = [&](ll x) {
-        // x != 0
-        ll res = -1;
-        rep(i, 63) {
-            if ((x >> i) & 1) res = i;
-        }
-        return res;
-    };
-
-    rep(i, base.size()) rep(j, base.size()) if (i != j) {
-        ll m = msb(base[i]);
-        if ((base[j] >> m) & 1) {
-            base[j] ^= base[i];
-        }
-    }
-
-    sort(all(base));
-
-    // fore(b, base) {
-    //     cout << bitset<40>(b) << endl;
-    // }
-
-    vll ans;
-    L--; R--;
-    for (ll x = L; x <= R; x++) {
-        ll add = 0;
-        rep(i, (int)base.size()) {
-            if ((x >> i) & 1) {
-                add ^= base[i];
-            }
-        }
-        ans.pb(add);
-    }
-
-    OUT(ans);
-
-}
-
-#else
-
 #include <bits/stdc++.h>
 using namespace std;
 // #include <atcoder/all>
@@ -158,7 +100,36 @@ long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { 
 
 }
 
-#define INCLUDED_MAIN
-#include __FILE__ // Codeforces で壊れるらしい
 
-#endif
+
+int main() {
+    
+    LL(N);    
+    VEC(ll, Qa, N);
+    VEC(ll, A, N);
+    VEC(ll, B, N);
+
+    ll a = 0;
+
+    ll ans = 0;
+
+    while (true) {
+        auto Q = Qa;
+
+        rep(i, N) Q[i] -= a * A[i];
+        if (any_of(all(Q), [](ll x) { return x < 0; })) break;
+
+        ll b = INF;
+
+        rep(i, N) {
+            if (B[i] == 0) continue;
+            chmin(b, Q[i] / B[i]);
+        }
+
+
+        chmax(ans, a + b);
+        a++;
+    }
+    
+    OUT(ans);
+}

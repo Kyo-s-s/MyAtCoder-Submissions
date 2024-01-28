@@ -1,61 +1,3 @@
-#ifdef INCLUDED_MAIN
-
-int main() {
-
-    LL(N, L, R);
-    VEC(ll, A, N);
-
-    vll base;
-    for (auto v : A) {
-        for (auto e : base) {
-            v = min(v, v ^ e);
-        }
-        if (v > 0) base.push_back(v);
-    }    
-
-    sort(all(base));
-    reverse(all(base));
-
-    auto msb = [&](ll x) {
-        // x != 0
-        ll res = -1;
-        rep(i, 63) {
-            if ((x >> i) & 1) res = i;
-        }
-        return res;
-    };
-
-    rep(i, base.size()) rep(j, base.size()) if (i != j) {
-        ll m = msb(base[i]);
-        if ((base[j] >> m) & 1) {
-            base[j] ^= base[i];
-        }
-    }
-
-    sort(all(base));
-
-    // fore(b, base) {
-    //     cout << bitset<40>(b) << endl;
-    // }
-
-    vll ans;
-    L--; R--;
-    for (ll x = L; x <= R; x++) {
-        ll add = 0;
-        rep(i, (int)base.size()) {
-            if ((x >> i) & 1) {
-                add ^= base[i];
-            }
-        }
-        ans.pb(add);
-    }
-
-    OUT(ans);
-
-}
-
-#else
-
 #include <bits/stdc++.h>
 using namespace std;
 // #include <atcoder/all>
@@ -158,7 +100,154 @@ long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { 
 
 }
 
-#define INCLUDED_MAIN
-#include __FILE__ // Codeforces で壊れるらしい
+template <class M, class O, auto fn> struct LazySegtree {
+    using S = typename M::T;
+    using F = typename O::T;
+    static_assert(is_convertible_v<decltype(fn), std::function<S(F, S)>>);
 
-#endif
+  public:
+    LazySegtree() : LazySegtree(0) {}
+    LazySegtree(int n) : LazySegtree(std::vector<S>(n, M::e())) {}
+    LazySegtree(const std::vector<S>& v) : n(int(v.size())) {
+        while ((1 << log) < n) log++;
+        size = 1 << log;
+        d = vector<S>(2 * size, M::e());
+        lz = vector<F>(size, O::e());
+        for (int i = 0; i < n; i++) d[size + i] = v[i];
+        for (int i = size - 1; i >= 1; i--) update(i);
+    }
+
+    void set(int p, S x) {
+        assert(0 <= p && p < n);
+        p += size;
+        for (int i = log; i >= 1; i--) push(p >> i);
+        d[p] = x;
+        for (int i = 1; i <= log; i++) update(p >> i);
+    }
+
+    S get(int p) {
+        assert(0 <= p && p < n);
+        p += size;
+        for (int i = log; i >= 1; i--) push(p >> i);
+        return d[p];
+    }
+
+    S prod(int l, int r) {
+        assert(0 <= l && l <= r && r <= n);
+        if (l == r) return M::e();
+        l += size; r += size;
+        for (int i = log; i >= 1; i--) {
+            if (((l >> i) << i) != l) push(l >> i);
+            if (((r >> i) << i) != r) push(r >> i);
+        }
+        S sml = M::e(), smr = M::e();
+        while (l < r) {
+            if (l & 1) sml = M::op(sml, d[l++]);
+            if (r & 1) smr = M::op(d[--r], smr);
+            l >>= 1; r >>= 1;
+        }
+        return M::op(sml, smr);
+    }
+
+    S all_prod() { return d[1]; }
+
+    void apply(int p, F f) {
+        assert(0 <= p && p < n);
+        p += size;
+        for (int i = log; i >= 1; i--) push(p >> i);
+        d[p] = fn(f, d[p]);
+        for (int i = 1; i <= log; i++) update(p >> i);
+    }
+    void apply(int l, int r, F f) {
+        assert(0 <= l && l <= r && r <= n);
+        if (l == r) return;
+        l += size; r += size;
+        for (int i = log; i >= 1; i--) {
+            if (((l >> i) << i) != l) push(l >> i);
+            if (((r >> i) << i) != r) push((r - 1) >> i);
+        }
+        {
+            int l2 = l, r2 = r;
+            while (l < r) {
+                if (l & 1) all_apply(l++, f);
+                if (r & 1) all_apply(--r, f);
+                l >>= 1; r >>= 1;
+            }
+            l = l2; r = r2;
+        }
+        for (int i = 1; i <= log; i++) {
+            if (((l >> i) << i) != l) update(l >> i);
+            if (((r >> i) << i) != r) update((r - 1) >> i);
+        }
+    }
+
+  private:
+    int n, size, log = 0;
+    vector<S> d;
+    vector<F> lz;
+
+    void update(int k) { d[k] = M::op(d[2 * k], d[2 * k + 1]); }
+    void all_apply(int k, F f) {
+        d[k] = fn(f, d[k]);
+        if (k < size) lz[k] = O::op(f, lz[k]);
+    }
+    void push(int k) {
+        all_apply(2 * k, lz[k]);
+        all_apply(2 * k + 1, lz[k]);
+        lz[k] = O::e();
+    }
+};
+
+
+struct Mo {
+    using T = long long;
+    static T op(T a, T b) { return min(a, b); }
+    static T e() { return 0; }
+};
+struct O {
+    using T = long long;
+    static T op(T a, T b) { return a + b; }
+    static T e() { return 0; }
+};
+Mo::T fn(O::T f, Mo::T x) { return x + f; }
+
+int main() {
+    
+    LL(N, M);   
+    VEC(ll, X, M);
+
+    LazySegtree<Mo, O, fn> seg(N + 10);
+
+    rep(i, M - 1) {
+        ll a = X[i], b = X[i + 1];
+
+        if (a < b) {
+            seg.apply(a, b, b - a);
+
+            seg.apply(0, a, N - (b - a));
+            seg.apply(b, N, N - (b - a));
+        } else {
+            seg.apply(a, N, N - abs(b - a));
+            seg.apply(0, b, N - abs(b - a));
+
+            seg.apply(b, a, abs(b - a));
+        }
+
+
+    //        vll deb;
+    // rep(i, N) {
+    //     deb.pb(seg.get(i));
+    // }
+    // OUT(deb);
+    }    
+
+    ll base = (M - 1) * N;
+
+    ll ans = INF;
+    rep(i, N) {
+        chmin(ans, base - seg.get(i));
+    }
+ 
+
+    OUT(ans);
+}

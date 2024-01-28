@@ -1,61 +1,3 @@
-#ifdef INCLUDED_MAIN
-
-int main() {
-
-    LL(N, L, R);
-    VEC(ll, A, N);
-
-    vll base;
-    for (auto v : A) {
-        for (auto e : base) {
-            v = min(v, v ^ e);
-        }
-        if (v > 0) base.push_back(v);
-    }    
-
-    sort(all(base));
-    reverse(all(base));
-
-    auto msb = [&](ll x) {
-        // x != 0
-        ll res = -1;
-        rep(i, 63) {
-            if ((x >> i) & 1) res = i;
-        }
-        return res;
-    };
-
-    rep(i, base.size()) rep(j, base.size()) if (i != j) {
-        ll m = msb(base[i]);
-        if ((base[j] >> m) & 1) {
-            base[j] ^= base[i];
-        }
-    }
-
-    sort(all(base));
-
-    // fore(b, base) {
-    //     cout << bitset<40>(b) << endl;
-    // }
-
-    vll ans;
-    L--; R--;
-    for (ll x = L; x <= R; x++) {
-        ll add = 0;
-        rep(i, (int)base.size()) {
-            if ((x >> i) & 1) {
-                add ^= base[i];
-            }
-        }
-        ans.pb(add);
-    }
-
-    OUT(ans);
-
-}
-
-#else
-
 #include <bits/stdc++.h>
 using namespace std;
 // #include <atcoder/all>
@@ -158,7 +100,135 @@ long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { 
 
 }
 
-#define INCLUDED_MAIN
-#include __FILE__ // Codeforces で壊れるらしい
+template<int m> struct StaticModint{
+    using mint = StaticModint;
+  public:
+    static constexpr int mod() { return m; }
+    static mint raw(int v) {
+        mint x;
+        x._v = v;
+        return x;
+    }
 
-#endif
+    StaticModint() : _v(0) {}
+    template <class T>
+    StaticModint(T v) {
+        long long x = (long long)(v % (long long)(umod()));
+        if (x < 0) x += umod();
+        _v = (unsigned int)(x);
+    }
+
+    unsigned int val() const { return _v; }
+
+    mint& operator++() {
+        _v++;
+        if (_v == umod()) _v = 0;
+        return *this;
+    }
+    mint& operator--() {
+        if (_v == 0) _v = umod();
+        _v--;
+        return *this;
+    }
+    mint operator++(int) {
+        mint result = *this;
+        ++*this;
+        return result;
+    }
+    mint operator--(int) {
+        mint result = *this;
+        --*this;
+        return result;
+    }
+
+    mint& operator+=(const mint& rhs) {
+        _v += rhs._v;
+        if (_v >= umod()) _v -= umod();
+        return *this;
+    }
+    mint& operator-=(const mint& rhs) {
+        _v -= rhs._v;
+        if (_v >= umod()) _v += umod();
+        return *this;
+    }
+    mint& operator*=(const mint& rhs) {
+        unsigned long long z = _v;
+        z *= rhs._v;
+        _v = (unsigned int)(z % umod());
+        return *this;
+    }
+    mint& operator/=(const mint& rhs) { return *this = *this * rhs.inv(); }
+
+    mint operator+() const { return *this; }
+    mint operator-() const { return mint() - *this; }
+
+    mint pow(long long n) const {
+        assert(0 <= n);
+        mint x = *this, r = 1;
+        while (n) {
+            if (n & 1) r *= x;
+            x *= x;
+            n >>= 1;
+        }
+        return r;
+    }
+    mint inv() const {
+        assert(_v);
+        return pow(umod() - 2);
+    }
+
+    friend mint operator+(const mint& lhs, const mint& rhs) { return mint(lhs) += rhs;}
+    friend mint operator-(const mint& lhs, const mint& rhs) { return mint(lhs) -= rhs; }
+    friend mint operator*(const mint& lhs, const mint& rhs) { return mint(lhs) *= rhs; }
+    friend mint operator/(const mint& lhs, const mint& rhs) { return mint(lhs) /= rhs; }
+    friend bool operator==(const mint& lhs, const mint& rhs) { return lhs._v == rhs._v; }
+    friend bool operator!=(const mint& lhs, const mint& rhs) { return lhs._v != rhs._v; }
+
+    friend ostream &operator<<(ostream &os, mint x) {
+        os << x.val();
+        return (os);
+    }
+
+  private:
+    unsigned int _v;
+    static constexpr unsigned int umod() { return m; }
+
+};
+
+using Modint998244353 = StaticModint<998244353>;
+using Modint1000000007 = StaticModint<1000000007>;
+
+using Mint = Modint1000000007;
+
+void solve() {
+
+    LL(N, A, B);
+
+    if (A < B) swap(A, B);
+
+    Mint ng = [&]() {
+        Mint res = Mint(N - A + 1) * Mint(N - B + 1);
+
+        Mint dec = [&]() {
+            if (N - A - B < 0) return Mint(0);
+            return Mint(N - A - B + 2) * Mint(N - A - B + 1) / 2;
+        }();
+
+        res -= 2 * dec;
+
+        return res.pow(2);
+    }();
+
+    // OUT(Mint(N - A + 1).pow(2) * Mint(N - B + 1).pow(2), ng);
+
+    Mint ans = Mint(N - A + 1).pow(2) * Mint(N - B + 1).pow(2) - ng;
+    OUT(ans);
+
+}
+
+int main() {
+    
+    LL(T);
+    while (T--) solve();
+    
+}

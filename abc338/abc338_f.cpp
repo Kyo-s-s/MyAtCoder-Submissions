@@ -100,15 +100,74 @@ long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { 
 
 }
 
+template<class T> struct AddInf {
+    static AddInf<T> Inf() { return AddInf<T>(); }
+
+    optional<T> val;
+
+    AddInf() : val(nullopt) {}
+    AddInf(T val) : val(val) {}
+
+    bool isInf() const { return !val; }
+
+    AddInf operator+(const AddInf &rhs) const {
+        if (isInf() || rhs.isInf()) return Inf();
+        return AddInf(*val + *rhs.val);
+    }
+
+    AddInf operator-(const AddInf &rhs) const {
+        assert(!rhs.isInf());
+        if (isInf()) return Inf();
+        return AddInf(*val - *rhs.val);
+    }
+
+    AddInf operator*(const AddInf &rhs) const {
+        if (!val || !rhs.val) return Inf();
+        return AddInf(*val * *rhs.val);
+    }
+
+    AddInf operator/(const AddInf &rhs) const {
+        assert(!rhs.isInf());
+        if (isInf()) return Inf();
+        return AddInf(*val / *rhs.val);
+    }
+
+    bool operator==(const AddInf &rhs) const {
+        if (isInf() || rhs.isInf()) return false;
+        return *val == *rhs.val;
+    }
+
+    bool operator!=(const AddInf &rhs) const {
+        if (isInf() || rhs.isInf()) return true;
+        return *val != *rhs.val;
+    }
+
+    bool operator<(const AddInf &rhs) const {
+        if (isInf() && rhs.isInf()) return false;
+        if (isInf()) return false;
+        if (rhs.isInf()) return true;
+        return *val < *rhs.val;
+    }
+
+    friend ostream &operator<<(ostream &os, const AddInf &rhs) {
+        if (rhs.isInf()) os << "Inf";
+        else os << *rhs.val;
+        return os;
+    }
+};
+
+using llf = AddInf<long long>;
+
 struct edge {
     ll to, cost;
     edge(ll to, ll cost) : to(to), cost(cost) {}
 };
 
 int main() {
-    
+
+     
     LL(N, M);   
-    vvll G(N, vll(N, INF));
+    vector G(N, vector(N, llf::Inf()));
     rep(i, M) {
         LL(u, v, w); u--; v--;
         G[u][v] = w;
@@ -116,44 +175,31 @@ int main() {
 
     rep(i, N) G[i][i] = 0;
     rep(k, N) rep(i, N) rep(j, N) {
-        if (G[i][k] == INF || G[k][j] == INF) continue;
         chmin(G[i][j], G[i][k] + G[k][j]);
     }
     
-    vector dp(1 << N, vll(N, INF));
+    vector dp(1 << N, vector(N, llf::Inf()));
 
     rep(i, N) {
         dp[1 << i][i] = 0;
     }
     rep(s, 1 << N) {
         rep(i, N) if ((s >> i) & 1) {
-            if (dp[s][i] == INF) continue;
+            if (dp[s][i].isInf()) continue;
             rep(j, N) if (!((s >> j) & 1)){
-                if (G[i][j] == INF) continue;
+                if (G[i][j].isInf()) continue;
                 chmin(dp[s | (1 << j)][j], dp[s][i] + G[i][j]);
             }
         }
     }
 
-    ll ans = INF;
+    llf ans = llf::Inf();
     rep(i, N) chmin(ans, dp[(1 << N) - 1][i]);
-    if  (ans == INF) {
+    if  (ans.isInf()) {
         OUT("No");
         exit(0);
     }
     OUT(ans);
 
-    // for (auto c : on) {
-    //     for (auto u : c) {
-    //         OUT(u, dp[u]);
-    //     }
-    // }
-
-
-    // 遷移フェーズ
-
-    // minにするフェーズ　高々建っている回更新すれば十分
-
-    
 
 }

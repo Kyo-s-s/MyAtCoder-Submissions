@@ -2,55 +2,18 @@
 
 int main() {
 
-    LL(N, L, R);
+    LL(N); 
     VEC(ll, A, N);
+    LL(Q);
+    while (Q--) {
+        LL(t);
 
-    vll base;
-    for (auto v : A) {
-        for (auto e : base) {
-            v = min(v, v ^ e);
-        }
-        if (v > 0) base.push_back(v);
-    }    
-
-    sort(all(base));
-    reverse(all(base));
-
-    auto msb = [&](ll x) {
-        // x != 0
-        ll res = -1;
-        rep(i, 63) {
-            if ((x >> i) & 1) res = i;
-        }
-        return res;
-    };
-
-    rep(i, base.size()) rep(j, base.size()) if (i != j) {
-        ll m = msb(base[i]);
-        if ((base[j] >> m) & 1) {
-            base[j] ^= base[i];
+        if (t == 1) {
+            LL(k, x); k--; A[k] = x;
+        } else {
+            LL(k); k--; OUT(A[k]);
         }
     }
-
-    sort(all(base));
-
-    // fore(b, base) {
-    //     cout << bitset<40>(b) << endl;
-    // }
-
-    vll ans;
-    L--; R--;
-    for (ll x = L; x <= R; x++) {
-        ll add = 0;
-        rep(i, (int)base.size()) {
-            if ((x >> i) & 1) {
-                add ^= base[i];
-            }
-        }
-        ans.pb(add);
-    }
-
-    OUT(ans);
 
 }
 

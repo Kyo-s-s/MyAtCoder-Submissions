@@ -1,61 +1,3 @@
-#ifdef INCLUDED_MAIN
-
-int main() {
-
-    LL(N, L, R);
-    VEC(ll, A, N);
-
-    vll base;
-    for (auto v : A) {
-        for (auto e : base) {
-            v = min(v, v ^ e);
-        }
-        if (v > 0) base.push_back(v);
-    }    
-
-    sort(all(base));
-    reverse(all(base));
-
-    auto msb = [&](ll x) {
-        // x != 0
-        ll res = -1;
-        rep(i, 63) {
-            if ((x >> i) & 1) res = i;
-        }
-        return res;
-    };
-
-    rep(i, base.size()) rep(j, base.size()) if (i != j) {
-        ll m = msb(base[i]);
-        if ((base[j] >> m) & 1) {
-            base[j] ^= base[i];
-        }
-    }
-
-    sort(all(base));
-
-    // fore(b, base) {
-    //     cout << bitset<40>(b) << endl;
-    // }
-
-    vll ans;
-    L--; R--;
-    for (ll x = L; x <= R; x++) {
-        ll add = 0;
-        rep(i, (int)base.size()) {
-            if ((x >> i) & 1) {
-                add ^= base[i];
-            }
-        }
-        ans.pb(add);
-    }
-
-    OUT(ans);
-
-}
-
-#else
-
 #include <bits/stdc++.h>
 using namespace std;
 // #include <atcoder/all>
@@ -158,7 +100,48 @@ long long bisect(long long ok, long long ng, function<bool(long long)> is_ok) { 
 
 }
 
-#define INCLUDED_MAIN
-#include __FILE__ // Codeforces で壊れるらしい
 
-#endif
+struct event {
+    ll v;
+    int id;
+    bool isA;
+
+    event(int id, ll v, bool isA) : id(id), v(v), isA(isA) {}
+
+    bool operator<(const event &e) const {
+        return v < e.v;
+    }
+};
+
+
+int main() {
+    
+    LL(N);    
+    vpll AB(N);
+    rep(i, N) cin >> AB[i].fi >> AB[i].se;
+
+    vector<event> events;
+    rep(i, N) {
+        auto [a, b] = AB[i];
+        if (a > b) swap(a, b);
+        events.emplace_back(i, a, true);
+        events.emplace_back(i, b, false);
+    }
+
+    vector<ll> st;
+    bool ans = false;
+    sort(all(events));
+
+    for (auto ev : events) {
+        // OUT(ev.v, ev.id, ev.isA);
+        // OUT(st);     
+        if (ev.isA) {
+            st.push_back(ev.id);
+        } else {
+            if (st.back() != ev.id) ans = true;
+            st.pop_back();
+        }
+    }
+   
+    YesNo(ans);
+}

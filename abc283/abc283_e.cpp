@@ -2,54 +2,80 @@
 
 int main() {
 
-    LL(N, L, R);
-    VEC(ll, A, N);
+    LL(H, W);
 
-    vll base;
-    for (auto v : A) {
-        for (auto e : base) {
-            v = min(v, v ^ e);
+    vvll A(H, vll(W));
+    rep(h, H) rep(w, W) cin >> A[h][w];
+
+    vll dp(4, INF);
+    dp[0] = 0;    
+    dp[1] = 1;
+
+
+    auto check = [&](ll h, ll w, ll hw, ll nw, ll pw) -> bool {
+        // ... | ...... | ...   <- pw
+        // ... | (h, w) | ...   <- hw
+        // ... |        | ...   <- nw
+        // pw が -1 なら pw は考えない
+        bool exist = false;
+        if (include(0, W, w - 1) && A[h][w - 1] == A[h][w]) exist = true;
+        if (include(0, W, w + 1) && A[h][w + 1] == A[h][w]) exist = true;
+        ll ahw = hw ? 1 - A[h][w] : A[h][w];
+        if (include(0, H, h + 1) && nw != -1) {
+            ll nhw = nw ? 1 - A[h + 1][w] : A[h + 1][w];
+            if (ahw == nhw) exist = true;
         }
-        if (v > 0) base.push_back(v);
-    }    
-
-    sort(all(base));
-    reverse(all(base));
-
-    auto msb = [&](ll x) {
-        // x != 0
-        ll res = -1;
-        rep(i, 63) {
-            if ((x >> i) & 1) res = i;
+        if (include(0, H, h - 1) && pw != -1) {
+            ll phw = pw ? 1 - A[h - 1][w] : A[h - 1][w];
+            if (ahw == phw) exist = true;
         }
-        return res;
+        return exist;
     };
 
-    rep(i, base.size()) rep(j, base.size()) if (i != j) {
-        ll m = msb(base[i]);
-        if ((base[j] >> m) & 1) {
-            base[j] ^= base[i];
-        }
-    }
+    vll toW(W);
+    rep(w, W) toW[w] = w;
 
-    sort(all(base));
-
-    // fore(b, base) {
-    //     cout << bitset<40>(b) << endl;
-    // }
-
-    vll ans;
-    L--; R--;
-    for (ll x = L; x <= R; x++) {
-        ll add = 0;
-        rep(i, (int)base.size()) {
-            if ((x >> i) & 1) {
-                add ^= base[i];
+    {
+        vll pd(4, INF);
+        rep(x, 2) { // A[0] の状態
+            rep(j, 2) { // A[1] の状態
+                // A[0] に着目して、壊れちゃったら遷移しない
+                if (all_of(all(toW), [&](ll w) {
+                    return check(0, w, x, j, -1);
+                })) {
+                    chmin(pd[(x << 1) + j], dp[x] + j);
+                }
             }
         }
-        ans.pb(add);
+        swap(dp, pd);
     }
 
+    rep(h, H) {
+        if (h == 0 || h == 1) continue;
+        vll pd(4, INF);
+        rep(x, 4) {
+            rep(j, 2) {
+                if (all_of(all(toW), [&](ll w) {
+                    return check(h - 1, w, x & 1, j, (x >> 1) & 1);
+                })) {
+                    chmin(pd[((x & 1) << 1) + j], dp[x] + j);
+                }
+            }
+        }
+        swap(dp, pd);
+    }
+
+    // さいご 帳尻が合っていなかったらダメ～
+    ll ans = INF;
+    rep(x, 4) {
+        if (all_of(all(toW), [&](ll w) {
+            return check(H - 1, w, x & 1, -1, (x >> 1) & 1);
+        })) {
+            chmin(ans, dp[x]);
+        }
+    }
+
+    if (ans == INF) ans = -1;
     OUT(ans);
 
 }
