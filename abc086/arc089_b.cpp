@@ -1,94 +1,91 @@
 #ifdef INCLUDED_MAIN
 
-template<typename T> 
-concept Monoid = requires {
-    typename T::T;
-    { T::op(std::declval<typename T::T>(), std::declval<typename T::T>()) } -> std::same_as<typename T::T>;
-    { T::e() } -> std::same_as<typename T::T>;
-};
 
-template<class T, Monoid M>
-struct MergeTree {
-    using S = typename M::T;
-  public:
+template< class T >
+struct CumulativeSum2D {
+  vector< vector< T > > data;
 
-    MergeTree(int n, std::function<T(int, int)> f) : n(n) {
-        while((1 << log) < n) log++;
-        size = 1 << log;
-        d = vector<T> (2 * size, T());
-        auto init = [&](auto &&init, int l, int r, int k) -> void {
-            d[k] = f(l, min(r, n));
-            if((int)d.size() <= 2 * k) return;
-            int m = (l + r) / 2;
-            init(init, l, m, 2 * k);
-            init(init, m, r, 2 * k + 1);
-        };
-        init(init, 0, size, 1);
+  CumulativeSum2D(int W, int H) : data(W + 1, vector< int >(H + 1, 0)) {}
+
+  void add(int x, int y, T z) {
+    ++x, ++y;
+    if(x >= data.size() || y >= data[0].size()) return;
+    data[x][y] += z;
+  }
+
+  void build() {
+    for(int i = 1; i < data.size(); i++) {
+      for(int j = 1; j < data[i].size(); j++) {
+        data[i][j] += data[i][j - 1] + data[i - 1][j] - data[i - 1][j - 1];
+      }
     }
+  }
 
-    S prod(int l, int r, std::function<S(const T&)> g) {
-        assert(0 <= l && l <= r && r <= n);
-        S sml = M::e(), smr = M::e();
-        l += size; r += size;
-        while (l < r) {
-            if (l & 1) sml = M::op(sml, g(d[l++]));
-            if (r & 1) smr = M::op(g(d[--r]), smr);
-            l >>= 1; r >>= 1;
-        }
-        return M::op(sml, smr);
-    }
-
-  private:
-    int n, size, log = 0;
-    vector<T> d;
+  T query(int sx, int sy, int gx, int gy) {
+    return (data[gx][gy] - data[sx][gy] - data[gx][sy] + data[sx][sy]);
+  }
 };
-
-struct State {
-    vector<ll> sorted;
-    vector<ll> cs;
-};
-
-struct Sum_M {
-    using T = ll;
-    static T op(T a, T b) { return a + b; }
-    static T e() { return 0; }
-};
-
 
 int main() {
 
-    LL(N);
-    VEC(ll, A, N);
-    LL(Q);
+    LL(N, K);
 
-    ll B = 0;
+    CumulativeSum2D<int> bl(2 * K, 2 * K), wh(2 * K, 2 * K);
 
-    auto f = [&](int l, int r) -> State {
-        vll sorted;
-        for (int i = l; i < r; i++) sorted.pb(A[i]);
-        sort(all(sorted));
-        vll cs = {0};
-        for (auto s: sorted) cs.pb(cs.back() + s);
-        return State{sorted, cs};
-    };
-
-    MergeTree<State, Sum_M> seg(N, f);
-
-    while (Q--) {
-        LL(a, b, g);
-        ll l = a ^ B, r = b ^ B, x = g ^ B;
-        l--; r--;
-        auto q = [&](const State &s) -> ll {
-            int idx = lower_bound(all(s.sorted), x + 1) - s.sorted.begin();
-            return s.cs[idx];
-        };
-        B = seg.prod(l, r + 1, q);
-        OUT(B);
+    rep(i, N) {
+        LL(px, py);
+        char c; cin >> c;
+        ll x = (px % (2 * K) + 2 * K) % (2 * K);
+        ll y = (py % (2 * K) + 2 * K) % (2 * K);
+        if (c == 'B') {
+            bl.add(x, y, 1);
+        } else {
+            wh.add(x, y, 1);
+        }
     }
 
+    bl.build();
+    wh.build();
+
+    ll ans = -INF;
+    rep(x, K) rep(y, K) {
+        ll now = 0;
+
+        now += bl.query(0, 0, x, y);
+        now += bl.query(x, y, x + K, y + K);
+        now += bl.query(0, y + K, x, 2 * K);
+        now += bl.query(x + K, 0, 2 * K, y);
+        now += bl.query(x + K, y + K, 2 * K, 2 * K);
+        now += wh.query(0, y, x, y + K);
+        now += wh.query(x, 0, x + K, y);
+        now += wh.query(x + K, y, 2 * K, y + K);
+        now += wh.query(x, y + K, x + K, 2 * K);
+
+        chmax(ans, now);
+    }
+
+    rep(x, K) rep(y, K) {
+        ll now = 0;
+
+        now += wh.query(0, 0, x, y);
+        now += wh.query(x, y, x + K, y + K);
+        now += wh.query(0, y + K, x, 2 * K);
+        now += wh.query(x + K, 0, 2 * K, y);
+        now += wh.query(x + K, y + K, 2 * K, 2 * K);
+        now += bl.query(0, y, x, y + K);
+        now += bl.query(x, 0, x + K, y);
+        now += bl.query(x + K, y, 2 * K, y + K);
+        now += bl.query(x, y + K, x + K, 2 * K);
+
+        chmax(ans, now);
+    }
+
+
+
+
+    OUT(ans);
+
 }
-
-
 
 #else
 

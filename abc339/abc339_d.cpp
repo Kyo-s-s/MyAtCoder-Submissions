@@ -1,94 +1,65 @@
 #ifdef INCLUDED_MAIN
 
-template<typename T> 
-concept Monoid = requires {
-    typename T::T;
-    { T::op(std::declval<typename T::T>(), std::declval<typename T::T>()) } -> std::same_as<typename T::T>;
-    { T::e() } -> std::same_as<typename T::T>;
-};
 
-template<class T, Monoid M>
-struct MergeTree {
-    using S = typename M::T;
-  public:
+using state = pair<pll, pll>;
 
-    MergeTree(int n, std::function<T(int, int)> f) : n(n) {
-        while((1 << log) < n) log++;
-        size = 1 << log;
-        d = vector<T> (2 * size, T());
-        auto init = [&](auto &&init, int l, int r, int k) -> void {
-            d[k] = f(l, min(r, n));
-            if((int)d.size() <= 2 * k) return;
-            int m = (l + r) / 2;
-            init(init, l, m, 2 * k);
-            init(init, m, r, 2 * k + 1);
-        };
-        init(init, 0, size, 1);
-    }
-
-    S prod(int l, int r, std::function<S(const T&)> g) {
-        assert(0 <= l && l <= r && r <= n);
-        S sml = M::e(), smr = M::e();
-        l += size; r += size;
-        while (l < r) {
-            if (l & 1) sml = M::op(sml, g(d[l++]));
-            if (r & 1) smr = M::op(g(d[--r]), smr);
-            l >>= 1; r >>= 1;
-        }
-        return M::op(sml, smr);
-    }
-
-  private:
-    int n, size, log = 0;
-    vector<T> d;
-};
-
-struct State {
-    vector<ll> sorted;
-    vector<ll> cs;
-};
-
-struct Sum_M {
-    using T = ll;
-    static T op(T a, T b) { return a + b; }
-    static T e() { return 0; }
-};
-
+ll dist[61][61][61][61];
 
 int main() {
 
+    rep(a, 61) rep(b, 61) rep(c, 61) rep(d, 61) dist[a][b][c][d] = INF;
+    vpll dxy = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+
     LL(N);
-    VEC(ll, A, N);
-    LL(Q);
+    VEC(string, S, N);
 
-    ll B = 0;
-
-    auto f = [&](int l, int r) -> State {
-        vll sorted;
-        for (int i = l; i < r; i++) sorted.pb(A[i]);
-        sort(all(sorted));
-        vll cs = {0};
-        for (auto s: sorted) cs.pb(cs.back() + s);
-        return State{sorted, cs};
-    };
-
-    MergeTree<State, Sum_M> seg(N, f);
-
-    while (Q--) {
-        LL(a, b, g);
-        ll l = a ^ B, r = b ^ B, x = g ^ B;
-        l--; r--;
-        auto q = [&](const State &s) -> ll {
-            int idx = lower_bound(all(s.sorted), x + 1) - s.sorted.begin();
-            return s.cs[idx];
-        };
-        B = seg.prod(l, r + 1, q);
-        OUT(B);
+    vpll P;
+    rep(i, N) rep(j, N) {
+        if (S[i][j] == 'P') {
+            P.pb({i, j});
+            S[i][j] = '.';
+        }
     }
 
+    auto nxt = [&](pll s, ll d) -> pll {
+        auto [x, y] = s;
+        ll nx = x + dxy[d].fi;
+        ll ny = y + dxy[d].se;
+        if (!include(0LL, N, nx) || !include(0LL, N, ny)) return pll{x, y};
+        if (S[nx][ny] == '#') return pll{x, y};
+        return pll{nx, ny};
+    };
+
+    auto nxt_state = [&](state s, ll d) -> state {
+        auto [p1, p2] = s;
+        return state{nxt(p1, d), nxt(p2, d)};
+    };
+
+
+    queue<state> q;
+    dist[P[0].fi][P[0].se][P[1].fi][P[1].se] = 0;
+    q.push({P[0], P[1]});
+
+    while (!q.empty()) {
+        auto [p1, p2] = q.front(); q.pop();
+        ll d = dist[p1.fi][p1.se][p2.fi][p2.se];
+        rep(i, 4) {
+            auto np = nxt_state({p1, p2}, i);
+            if (dist[np.fi.fi][np.fi.se][np.se.fi][np.se.se] != INF) continue;
+            dist[np.fi.fi][np.fi.se][np.se.fi][np.se.se] = d + 1;
+            q.push(np);
+        }
+    }
+
+
+    ll ans = INF;
+    rep(i, N) rep(j, N) chmin(ans, dist[i][j][i][j]);
+    if (ans == INF) ans = -1;
+
+    OUT(ans);
+    
+
 }
-
-
 
 #else
 

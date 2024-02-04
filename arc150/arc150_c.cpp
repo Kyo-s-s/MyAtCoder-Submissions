@@ -1,94 +1,47 @@
 #ifdef INCLUDED_MAIN
 
-template<typename T> 
-concept Monoid = requires {
-    typename T::T;
-    { T::op(std::declval<typename T::T>(), std::declval<typename T::T>()) } -> std::same_as<typename T::T>;
-    { T::e() } -> std::same_as<typename T::T>;
-};
-
-template<class T, Monoid M>
-struct MergeTree {
-    using S = typename M::T;
-  public:
-
-    MergeTree(int n, std::function<T(int, int)> f) : n(n) {
-        while((1 << log) < n) log++;
-        size = 1 << log;
-        d = vector<T> (2 * size, T());
-        auto init = [&](auto &&init, int l, int r, int k) -> void {
-            d[k] = f(l, min(r, n));
-            if((int)d.size() <= 2 * k) return;
-            int m = (l + r) / 2;
-            init(init, l, m, 2 * k);
-            init(init, m, r, 2 * k + 1);
-        };
-        init(init, 0, size, 1);
-    }
-
-    S prod(int l, int r, std::function<S(const T&)> g) {
-        assert(0 <= l && l <= r && r <= n);
-        S sml = M::e(), smr = M::e();
-        l += size; r += size;
-        while (l < r) {
-            if (l & 1) sml = M::op(sml, g(d[l++]));
-            if (r & 1) smr = M::op(g(d[--r]), smr);
-            l >>= 1; r >>= 1;
-        }
-        return M::op(sml, smr);
-    }
-
-  private:
-    int n, size, log = 0;
-    vector<T> d;
-};
-
-struct State {
-    vector<ll> sorted;
-    vector<ll> cs;
-};
-
-struct Sum_M {
-    using T = ll;
-    static T op(T a, T b) { return a + b; }
-    static T e() { return 0; }
-};
-
-
 int main() {
 
-    LL(N);
-    VEC(ll, A, N);
-    LL(Q);
+    LL(N, M, K);
+    vvll G(N + 1);
+    rep(i, M) {
+        LL(u, v);
+        G[u].pb(v);
+        G[v].pb(u);
+    }
+    G[0].pb(1);
 
-    ll B = 0;
+    vll A(N + 1, -1);
+    rep(i, N) cin >> A[i + 1];
+    VEC(ll, B, K);
+    B.pb(INF);
 
-    auto f = [&](int l, int r) -> State {
-        vll sorted;
-        for (int i = l; i < r; i++) sorted.pb(A[i]);
-        sort(all(sorted));
-        vll cs = {0};
-        for (auto s: sorted) cs.pb(cs.back() + s);
-        return State{sorted, cs};
-    };
+    vll label(N + 1, -INF);    
+    label[0] = 0;
+    // ノード i は、label[i] 未満までを Aに持つ
+    deque<ll> que;
+    que.push_back(0);
 
-    MergeTree<State, Sum_M> seg(N, f);
-
-    while (Q--) {
-        LL(a, b, g);
-        ll l = a ^ B, r = b ^ B, x = g ^ B;
-        l--; r--;
-        auto q = [&](const State &s) -> ll {
-            int idx = lower_bound(all(s.sorted), x + 1) - s.sorted.begin();
-            return s.cs[idx];
-        };
-        B = seg.prod(l, r + 1, q);
-        OUT(B);
+    while (!que.empty()) {
+        ll now = que.front(); que.pop_front();
+        for (auto e : G[now]) if (label[e] == -INF) {
+            if (A[e] == B[label[now]]) {
+                label[e] = label[now] + 1;
+                que.push_back(e);
+            } else {
+                label[e] = label[now];
+                que.push_front(e);
+            }
+        }
     }
 
+    YesNo(label[N] == K);
+    
+
+
+
+
 }
-
-
 
 #else
 
