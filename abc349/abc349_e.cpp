@@ -2,57 +2,73 @@
 
 int main() {
 
-    LL(H, W);   
-    VEC(string, S, H);
-    LL(N);
-    // vector<vector<vector<ll>>> drag(H, vector<vector<ll>>(W));
-    vvll drag(H, vector<ll>(W, -INF));
-    rep(i, N) {
-        LL(r, c, e); r--; c--;
-        chmax(drag[r][c], e);
-    }
-
-    auto find = [&](char c) -> pll {
-        rep(h, H) rep(w, W) if (S[h][w] == c) {
-            return {h, w};
-        }
-        return {-1, -1};
+    vvll row = {
+        {0, 1, 2},
+        {3, 4, 5},
+        {6, 7, 8},
+        {0, 3, 6},
+        {1, 4, 7},
+        {2, 5, 8},
+        {0, 4, 8},
+        {2, 4, 6}
     };
 
-    auto [sh, sw] = find('S');
+    vll A(9);
+    rep(i, 9) cin >> A[i];
 
-    vvll cost(H, vll(W, -INF));
-    priority_queue<pair<ll, pll>> pq;
-    pq.push({0, {sh, sw}});
+    vll color(9, 0);
+    // 0: white, 1: red, 2: blue
 
-    vpll dxy = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    // true: 高橋君の勝ち、false: 青木君の勝ち
+    auto dfs = [&](auto&& self) -> bool {
+        ll c = 0;
+        rep(i, 9) if (color[i] != 0) c++;
 
-    while (!pq.empty()) {
-        auto [c, pos] = pq.top(); pq.pop();
-        auto [x, y] = pos;
-        // OUT(c, x, y);
-        // drag
-        chmax(c, drag[x][y]);
-        if (cost[x][y] >= c) continue;
-        cost[x][y] = c;
-
-        if (c > 0) {
-            for (auto [dx, dy] : dxy) {
-                ll nx = x + dx;
-                ll ny = y + dy;
-                if (nx < 0 || nx >= H || ny < 0 || ny >= W) continue;
-                if (S[nx][ny] == '#') continue;
-                pq.push({c - 1, {nx, ny}});
-                // chmax(cost[nx][ny], c - 1);
+        // 現在の勝敗チェック
+        for (auto r : row) {
+            if (color[r[0]] == color[r[1]] && color[r[1]] == color[r[2]]) {
+                if (color[r[0]] == 1) return true;
+                if (color[r[0]] == 2) return false;
             }
         }
+        if (c == 9) {
+            ll red = 0, blue = 0;
+            rep(i, 9) {
+                if (color[i] == 1) red += A[i];
+                if (color[i] == 2) blue += A[i];
+            }
+            return red > blue;
+        }
+
+        // c % 2 == 0: red が選ぶターン 
+        if (c % 2 == 0) {
+            rep(i, 9) if (color[i] == 0) {
+                color[i] = 1;
+                bool res = self(self);   
+                color[i] = 0;
+                if (res) return true;
+            }
+            return false;
+        } else {
+            rep(i, 9) if (color[i] == 0) {
+                color[i] = 2;
+                bool res = self(self);
+                color[i] = 0;
+                if (!res) return false;
+            }
+            return true;
+        }
+        exit(1);
+        return true;
+    };  
+
+    bool ans = dfs(dfs);
+    if (ans) {
+        OUT("Takahashi");
+    } else {
+        OUT("Aoki");
     }
 
-    auto [gx, gy] = find('T');
-    YesNo(cost[gx][gy] >= 0);
-    // OUT("a");
-
-    // rep(i, H) OUT(cost[i]);;
 
 }
 
