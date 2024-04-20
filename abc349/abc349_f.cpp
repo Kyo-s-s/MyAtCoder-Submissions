@@ -576,6 +576,16 @@ int main() {
 
 }
 
+/*
+
+D: 再帰セグ木
+E: やる
+F: M = 1 のときをやめてください！ 普通にバカなWAを何度か投げてしまった
+   こんなの難しくて通されないだろ～と思って油断していた
+   https://mofecoder.com/contests/cyan_or_less_01/tasks/cyan_or_less_01_h を思い出した(？)
+
+*/
+
 #else
 
 #include <bits/stdc++.h>
