@@ -1,58 +1,114 @@
 #ifdef INCLUDED_MAIN
 
-using Mint = atcoder::modint998244353;
+struct UnionFind {
+    int n, cnt;
+    vector<int> parent;
+    UnionFind() : n(0), cnt(0) {}
+    UnionFind(int n) : n(n), cnt(n), parent(n, -1) {}
+
+    int merge(int a, int b) {
+        assert(0 <= a && a < n && 0 <= b && b < n);
+        int x = leader(a), y = leader(b);
+        if (x == y) return x;
+        if (-parent[x] < -parent[y]) swap(x, y);
+        parent[x] += parent[y];
+        parent[y] = x;
+        cnt--;
+        return x;
+    } 
+
+    int leader(int a) {
+        assert(0 <= a && a < n);
+        if (parent[a] < 0) return a;
+        return parent[a] = leader(parent[a]);
+    }
+
+    bool same(int a, int b) {
+        assert(0 <= a && a < n && 0 <= b && b < n);
+        return leader(a) == leader(b);
+    }
+
+    int size(int a) {
+        assert(0 <= a && a < n);
+        return -parent[leader(a)];
+    }
+
+    int count() { return cnt; }
+
+    vector<vector<int>> groups() {
+        vector<int> leader_buf(n), group_size(n);
+        for (int i = 0; i < n; i++) {
+            leader_buf[i] = leader(i);
+            group_size[leader_buf[i]]++;
+        }
+        vector<vector<int>> result(n);
+        for (int i = 0; i < n; i++) {
+            result[i].reserve(group_size[i]);
+        }
+        for (int i = 0; i < n; i++) {
+            result[leader_buf[i]].push_back(i);
+        }
+        result.erase(
+            remove_if(result.begin(), result.end(),
+                      [&](const vector<int> &v) { return v.empty(); }),
+            result.end());
+        return result;
+    }
+};
+
+struct edges {
+    ll k, c;
+    vector<int> s;
+};
 
 int main() {
 
-    LL(N);    
-    VEC(ll, A, N);
+    LL(N, M);
 
-    deque<vector<Mint>> que;
-    fore(a, A) {
-        que.push_back({Mint(1), Mint(a)});
+    UnionFind uf(N);
+    vector<edges> E(M);
+    rep(i, M) {
+        LL(K, C);
+        VEC(int, S, K);
+        fore(s, S) s--;
+        E[i] = {K, C, S};
     }
 
-    while (que.size() > 1) {
-        auto a = que.front(); que.pop_front();
-        auto b = que.front(); que.pop_front();
-        auto c = atcoder::convolution(a, b);
-        que.push_back(c);
+    sort(all(E), [](edges &a, edges &b) { return a.c < b.c; });
+
+    ll ans = 0;
+    for (auto [k, c, s] : E) {
+        map<int, int> mp; // leader, id
+        for (auto x : s) {
+            int le = uf.leader(x);
+            if (mp.find(le) == mp.end()) {
+                mp[le] = x;
+            }
+        }
+        int parent = -1;
+        for (auto [le, id] : mp) {
+            if (parent == -1) {
+                parent = id;
+            } else {
+                uf.merge(parent, id);
+                ans += c;
+            }
+        }
     }
 
-    vector<Mint> res = que.front();
-    res.resize(res.size() + 10);
-
-
-    ll id = 1;
-    ll su = 0;
-    for (auto a : A) su += a;
-    
-    Mint k = Mint(1) / Mint(su);
-    for (int i = 1; i <= N; i++) {
-        res[i] *= k;
-        k *= Mint(++id);
-        k /= Mint(--su);
+    auto g = uf.groups();
+    if (g.size() > 1) {
+        ans = -1;
     }
-    
-    for (int i = 0; i <= N; i++) {
-        res[i] -= res[i + 1];
-    }
-    
-    Mint ans(0);
-    for (int i = 1; i <= N; i++) {
-        ans += Mint(i + 1) * res[i];
-    }
-    
-    cout << ans.val() << endl;
-        
 
+    OUT(ans);
 }
 
 #else
 
 #include <bits/stdc++.h>
 using namespace std;
-#include <atcoder/all>
+// #include <atcoder/all>
 // using namespace atcoder;
 
 /* alias */

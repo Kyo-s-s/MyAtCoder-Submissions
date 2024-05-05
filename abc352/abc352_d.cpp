@@ -1,58 +1,115 @@
 #ifdef INCLUDED_MAIN
 
-using Mint = atcoder::modint998244353;
+template<class M> struct Segtree {
+  public:
+    using S = typename M::T;
+
+    Segtree() : Segtree(0) {}
+    Segtree(int n) : Segtree(vector<S> (n, M::e())) {}
+    Segtree(const vector<S> &v) : n(int(v.size())) { 
+        while((1 << log) < n) log++;
+        size = 1 << log;
+        d = vector<S> (2 * size, M::e());
+        for(int i = 0; i < n; i++) d[size + i] = v[i];
+        for(int i = size - 1; i >= 1; i--) update(i);
+    }
+
+    void set(int p, S x) {
+        assert(0 <= p && p < n);
+        p += size;
+        d[p] = x;
+        for(int i = 1; i <= log; i++) update(p >> i);
+    }
+
+    S get(int p) {
+        assert(0 <= p && p < n);
+        return d[p + size];
+    }
+
+    S prod(int l, int r) {
+        assert(0 <= l && l <= r && r <= n);
+        S sml = M::e(), smr = M::e();
+        l += size; r += size;
+        while(l < r) {
+            if(l & 1) sml = M::op(sml, d[l++]);
+            if(r & 1) smr = M::op(d[--r], smr);
+            l >>= 1; r >>= 1;
+        }
+        return M::op(sml, smr);
+    }
+
+    S all_prod(){ return d[1]; }
+
+
+  private:
+    int n, size, log = 0;
+    vector<S> d;
+    void update(int k){ d[k] = M::op(d[k * 2], d[k * 2 + 1]); }
+
+};
+
+struct Max_M {    
+    using T = long long;
+    static T e() { return -INF; }
+    static T op(T x, T y) { return max(x, y); }
+};
+
+struct Min_M {    
+    using T = long long;
+    static T e() { return INF; }
+    static T op(T x, T y) { return min(x, y); }
+};
 
 int main() {
 
-    LL(N);    
-    VEC(ll, A, N);
+    LL(N, K);   
+    VEC(ll, P, N);
+    fore(p, P) p--;
 
-    deque<vector<Mint>> que;
-    fore(a, A) {
-        que.push_back({Mint(1), Mint(a)});
+    vector<int> ids(N);
+    rep(i, N) ids[P[i]] = i;
+
+    Segtree<Max_M> seg_max(N);
+    Segtree<Min_M> seg_min(N);
+
+    auto add = [&](int key) -> void {
+        seg_max.set(ids[key], ids[key]);
+        seg_min.set(ids[key], ids[key]);
+    };
+
+    auto del = [&](int key) -> void {
+        seg_max.set(ids[key], -INF);
+        seg_min.set(ids[key], INF);
+    };
+
+    ll ans = INF;
+    auto solve = [&]() -> void {
+        ll ma = seg_max.all_prod();
+        ll mi = seg_min.all_prod();
+        chmin(ans, ma - mi);
+    };
+
+    // K 個入れる
+    for (int k = 0; k < K; k++) add(k);
+    solve();
+    for (int i = 0; i < N; i++) {
+        del(i);
+        if (i + K < N) {
+            add(i + K);
+        } else {
+            break;
+        }
+        solve();
     }
 
-    while (que.size() > 1) {
-        auto a = que.front(); que.pop_front();
-        auto b = que.front(); que.pop_front();
-        auto c = atcoder::convolution(a, b);
-        que.push_back(c);
-    }
-
-    vector<Mint> res = que.front();
-    res.resize(res.size() + 10);
-
-
-    ll id = 1;
-    ll su = 0;
-    for (auto a : A) su += a;
-    
-    Mint k = Mint(1) / Mint(su);
-    for (int i = 1; i <= N; i++) {
-        res[i] *= k;
-        k *= Mint(++id);
-        k /= Mint(--su);
-    }
-    
-    for (int i = 0; i <= N; i++) {
-        res[i] -= res[i + 1];
-    }
-    
-    Mint ans(0);
-    for (int i = 1; i <= N; i++) {
-        ans += Mint(i + 1) * res[i];
-    }
-    
-    cout << ans.val() << endl;
-        
-
+    OUT(ans);
 }
 
 #else
 
 #include <bits/stdc++.h>
 using namespace std;
-#include <atcoder/all>
+// #include <atcoder/all>
 // using namespace atcoder;
 
 /* alias */

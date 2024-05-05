@@ -1,50 +1,9 @@
 #ifdef INCLUDED_MAIN
 
-using Mint = atcoder::modint998244353;
-
 int main() {
 
-    LL(N);    
-    VEC(ll, A, N);
-
-    deque<vector<Mint>> que;
-    fore(a, A) {
-        que.push_back({Mint(1), Mint(a)});
-    }
-
-    while (que.size() > 1) {
-        auto a = que.front(); que.pop_front();
-        auto b = que.front(); que.pop_front();
-        auto c = atcoder::convolution(a, b);
-        que.push_back(c);
-    }
-
-    vector<Mint> res = que.front();
-    res.resize(res.size() + 10);
-
-
-    ll id = 1;
-    ll su = 0;
-    for (auto a : A) su += a;
-    
-    Mint k = Mint(1) / Mint(su);
-    for (int i = 1; i <= N; i++) {
-        res[i] *= k;
-        k *= Mint(++id);
-        k /= Mint(--su);
-    }
-    
-    for (int i = 0; i <= N; i++) {
-        res[i] -= res[i + 1];
-    }
-    
-    Mint ans(0);
-    for (int i = 1; i <= N; i++) {
-        ans += Mint(i + 1) * res[i];
-    }
-    
-    cout << ans.val() << endl;
-        
+    LL(N, X, Y, Z);
+    YesNo((X < Z && Z < Y) || (Y < Z && Z < X));
 
 }
 
@@ -52,7 +11,7 @@ int main() {
 
 #include <bits/stdc++.h>
 using namespace std;
-#include <atcoder/all>
+// #include <atcoder/all>
 // using namespace atcoder;
 
 /* alias */
